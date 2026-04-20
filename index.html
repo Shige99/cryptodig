@@ -4282,20 +4282,6 @@
       <div class="wallet-bal-row" style="background:#3a0a0a;"><div class="tok"><div class="icn" style="background:#b93a3a;">💳</div>銀行負債</div><div class="v" style="color:#ff6060;">-$<span id="wm-debt">0</span></div></div>
     </div>
   </div>
-  <!-- 🏢 会社経営パネル（ランキングモードのみ表示） -->
-  <div class="wallet-section" id="wallet-company-section" style="display:none;">
-    <h4>🏢 会社経営</h4>
-    <div id="wallet-company-summary" style="font-size:11px;"></div>
-    <!-- 📊 日次損益グラフ -->
-    <div id="wallet-company-chart" style="margin-top:8px;"></div>
-    <!-- 🎲 採用ボタン -->
-    <div style="margin-top:10px;">
-      <button onclick="hireNewStaff()" style="width:100%; padding:10px; background:linear-gradient(90deg,#5a3e7a,#ff00aa,#ffd700); color:#fff; font-weight:900; font-size:13px; letter-spacing:2px; border:3px solid #1a1a1a; cursor:pointer; box-shadow:3px 3px 0 #000; text-shadow:1px 1px 0 #000;">
-        🎲 社員ガチャ採用（$50 / ランクE〜SSS）
-      </button>
-    </div>
-    <div id="wallet-company-employees" style="margin-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:6px;"></div>
-  </div>
   <div class="wallet-section">
     <h4>🏦 取引所に接続</h4>
     <div class="wallet-ex-buttons" id="wallet-ex-buttons"></div>
@@ -4347,6 +4333,42 @@
       <div class="swap-receive" id="swap-receive">受取予定: -</div>
       <button class="swap-execute" id="swap-execute" onclick="executeSwap()">SWAP を実行</button>
     </div>
+  </div>
+</div>
+
+<!-- 🏢 会社詳細ボタン（ランキングモードのみ表示） -->
+<div id="company-panel-btn" onclick="toggleCompanyPanel()" style="display:none; position:fixed; top:10px; right:440px; background:linear-gradient(135deg,#5a3e7a 0%,#ff00aa 100%); color:#fff; border:3px solid #1a1a1a; padding:6px 12px; cursor:pointer; z-index:9000; box-shadow:4px 4px 0 #000; display:none; align-items:center; gap:6px; font-weight:900;">
+  <div style="font-size:22px;">🏢</div>
+  <div style="font-size:9px; line-height:1.1; letter-spacing:1px;">
+    <div>会社詳細</div>
+    <div class="v" style="font-size:13px; color:#ffd700;">$<span id="company-btn-total">0</span></div>
+  </div>
+</div>
+
+<!-- 🏢 会社詳細モーダル（wallet-modal と同構造のスライドパネル） -->
+<div class="wallet-modal" id="company-panel-modal" style="background: linear-gradient(180deg,#1f1032 0%,#2a1a3e 100%); color:#fff;">
+  <div class="wallet-header" style="background: linear-gradient(90deg,#5a3e7a,#ff00aa,#ffd700);">
+    <div class="ttl">🏢 会社詳細<br><span style="font-size:9px; opacity:0.9; letter-spacing:1px; font-weight:700;">経営状況と社員管理</span></div>
+    <button class="close-btn" onclick="closeCompanyPanel()">×</button>
+  </div>
+  <div style="background:#fff8e6; color:#1a1a1a; padding:6px 12px; font-size:10px; border-bottom:2px solid #b8860b; line-height:1.4;">
+    💡 ここは<strong>会社経営の司令塔</strong>。社員の採用・解雇、損益、総資産の推移を管理する場所や。
+  </div>
+  <div class="wallet-section" style="background:#fff; color:#1a1a1a;">
+    <h4 style="background: linear-gradient(90deg,#5a3e7a,#ff00aa);">📊 経営サマリー</h4>
+    <div id="wallet-company-summary" style="font-size:11px; padding: 0 4px 8px;"></div>
+    <!-- 📈 日次損益グラフ -->
+    <div id="wallet-company-chart" style="margin-top:8px;"></div>
+  </div>
+  <div class="wallet-section" style="background:#fff; color:#1a1a1a;">
+    <h4 style="background: linear-gradient(90deg,#b93a3a,#ff6b3d);">🧑‍💼 社員リスト</h4>
+    <!-- 🎲 採用ボタン -->
+    <div style="margin-bottom:10px;">
+      <button onclick="hireNewStaff()" style="width:100%; padding:10px; background:linear-gradient(90deg,#5a3e7a,#ff00aa,#ffd700); color:#fff; font-weight:900; font-size:13px; letter-spacing:2px; border:3px solid #1a1a1a; cursor:pointer; box-shadow:3px 3px 0 #000; text-shadow:1px 1px 0 #000;">
+        🎲 社員ガチャ採用（$50 / ランクE〜SSS）
+      </button>
+    </div>
+    <div id="wallet-company-employees" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;"></div>
   </div>
 </div>
 
@@ -4570,7 +4592,7 @@
         ⛰ 現在の鉱山: <span id="cur-mine-name">-</span> ｜ 残り <span id="cur-mine-remain">0</span> DJM
       </div>
     </div>
-    <div style="display:grid; grid-template-columns:auto 1fr auto; gap:6px; margin-bottom:6px; align-items:center;">
+    <div style="display:grid; grid-template-columns:auto 1fr auto auto auto; gap:6px; margin-bottom:6px; align-items:center;">
       <div style="background:#0a0a0a; border:2px solid #b8860b; padding:4px 8px;">
         <span style="color:#b8860b; font-weight:900; font-size:10px;">📡 LIVE市場(₿inance)</span>
         <span id="mini-ticker" style="margin-left:6px;"></span>
@@ -4586,6 +4608,8 @@
       </div>
       <!-- 🏅 採掘中のランク表示（コンパクト版） -->
       <div class="rank-hud" style="background:linear-gradient(135deg,#1a1a1a,#2a2a4a); border:2px solid #ffd700; padding:4px 10px; color:#fff; font-weight:900; font-size:11px; min-width:160px;"></div>
+      <!-- 🎯 HUD横アクションボタンコンテナ（音量・ウォレット・会社詳細） -->
+      <div id="hud-action-buttons" style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;"></div>
     </div>
 
     <div class="game-main">
@@ -10798,6 +10822,8 @@ function updateAllHUD() {
     }
     // 🏢 会社ブーストバナーを更新（現在の採掘DJM・速度ボーナスを可視化）
     renderCompanyBoostBanner();
+    // 🏢 会社詳細ボタンの表示/値更新
+    updateCompanyPanelButton();
   } catch(_){}
   // モード表示バッジ更新
   try { updateModeBadge(); } catch(e) {}
@@ -13538,6 +13564,45 @@ function openWallet() {
   renderWallet();
 }
 
+// 🏢 会社詳細パネル：開閉
+function toggleCompanyPanel() {
+  const m = document.getElementById('company-panel-modal');
+  if (!m) return;
+  if (m.classList.contains('open')) {
+    closeCompanyPanel();
+  } else {
+    openCompanyPanel();
+  }
+}
+function openCompanyPanel() {
+  const m = document.getElementById('company-panel-modal');
+  if (!m) return;
+  m.classList.add('open');
+  try { renderCompanyPanel(); } catch(_){}
+  try { SE.play('btn_confirm'); } catch(_){}
+}
+function closeCompanyPanel() {
+  const m = document.getElementById('company-panel-modal');
+  if (!m) return;
+  m.classList.remove('open');
+  try { SE.play('btn_cancel'); } catch(_){}
+}
+
+// 会社詳細ボタンの表示/非表示・値更新（updateAllHUDから呼び出し）
+function updateCompanyPanelButton() {
+  const btn = document.getElementById('company-panel-btn');
+  if (!btn) return;
+  if (state?.gameMode === 'ranking' && state?.company) {
+    btn.style.display = 'flex';
+    const totalEl = document.getElementById('company-btn-total');
+    if (totalEl && typeof calcCompanyWealthMarket === 'function') {
+      totalEl.textContent = Math.floor(calcCompanyWealthMarket()).toLocaleString();
+    }
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
 // 🏢 会社ブーストバナー：現在の採掘DJM倍率・速度倍率・出勤人数を表示
 //    採掘中に「社員の効果が出てるか」が一目で分かる
 function renderCompanyBoostBanner() {
@@ -13887,13 +13952,16 @@ async function fireStaff(empId) {
 }
 
 // 🏢 会社経営パネル描画（ランキングモードのみ）
+//    新 company-panel-modal 用：サマリー・チャート・社員リストを個別IDで描画
 function renderCompanyPanel() {
-  const section = document.getElementById('wallet-company-section');
-  if (!section) return;
+  const modal = document.getElementById('company-panel-modal');
+  if (!modal) return;
   if (state?.gameMode !== 'ranking' || !state.company) {
-    section.style.display = 'none';
+    modal.style.display = 'none';
     return;
   }
+  // display は toggleで制御（ここでは固定解除）
+  modal.style.display = '';
   try { initializeCompanyIfNeeded(); } catch(_){}
   const c = state.company;
   const office = getOfficeInfo(c.officeLevel || 1);
@@ -13986,7 +14054,7 @@ function renderCompanyPanel() {
       `;
     }).join('');
   }
-  section.style.display = 'block';
+  // モーダル自体の表示/非表示は openCompanyPanel/closeCompanyPanel で制御
 }
 function closeWallet() {
   document.getElementById('wallet-modal').classList.remove('open');
@@ -15130,18 +15198,37 @@ document.addEventListener('visibilitychange', () => {
 
 // ページ読み込み時に開始
 window.addEventListener('load', () => {
-  // 🧲 サウンド・ウォレットボタンを .game 内に移動してスケール座標に追従させる
-  //    （viewport-fixed だとタブレット縮小時にゲームHUDと重なるバグの対策）
+  // 🎯 音量・ウォレット・会社詳細ボタンを HUD 内のランクHUD横に配置
+  //    タイトル画面ではこれらは非表示、ゲーム画面のHUDに統合
+  //    モーダル本体は .game 内に移動して transform scale に追従させる
   try {
     const gameEl = document.querySelector('.game');
-    const targets = ['sound-btn', 'sound-modal', 'wallet-modal'];
-    targets.forEach(id => {
+    // モーダル類は .game に appendChild（スケール追従のため）
+    const modalTargets = ['sound-modal', 'wallet-modal', 'company-panel-modal'];
+    modalTargets.forEach(id => {
       const el = document.getElementById(id);
       if (el && gameEl && el.parentNode !== gameEl) gameEl.appendChild(el);
     });
-    // wallet-btn は id が無いのでクラスで取得
-    const walletBtn = document.querySelector('body > .wallet-btn');
-    if (walletBtn && gameEl) gameEl.appendChild(walletBtn);
+    // ボタン類は HUD のアクションコンテナに移動
+    const hudBtnContainer = document.getElementById('hud-action-buttons');
+    if (hudBtnContainer) {
+      const soundBtn = document.getElementById('sound-btn');
+      const walletBtn = document.querySelector('.wallet-btn');
+      const companyBtn = document.getElementById('company-panel-btn');
+      [soundBtn, walletBtn, companyBtn].forEach(btn => {
+        if (!btn) return;
+        // 絶対位置解除 → HUD内でインライン表示
+        btn.style.position = 'relative';
+        btn.style.top = 'auto';
+        btn.style.right = 'auto';
+        btn.style.left = 'auto';
+        btn.style.zIndex = '2';
+        btn.style.padding = '4px 8px';
+        btn.style.fontSize = '10px';
+        btn.style.boxShadow = '2px 2px 0 #000';
+        hudBtnContainer.appendChild(btn);
+      });
+    }
   } catch(_){}
   try { migrateLegacySave(); } catch(e) {}
   // 🔒 鉱山スキーマ補完（既存セーブにrequiredRankが無い場合の保険）
