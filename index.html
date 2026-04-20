@@ -4052,6 +4052,19 @@
   60% { transform:scale(1.05) rotate(1deg); opacity:1; }
   100% { transform:scale(1) rotate(0); opacity:1; }
 }
+/* 📊 日次損益チャート アニメ */
+@keyframes plBarRise {
+  0%   { transform: scaleY(0); opacity: 0.3; }
+  60%  { transform: scaleY(1.15); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+@keyframes plTrendDraw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes plLabelFade {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 /* 😎 ドヤ顔割り込み通知アニメ */
 @keyframes liveDoyaIn {
   0%   { opacity: 0; transform: translateX(-120%) rotate(-12deg) scale(0.6); }
@@ -4275,6 +4288,12 @@
     <div id="wallet-company-summary" style="font-size:11px;"></div>
     <!-- 📊 日次損益グラフ -->
     <div id="wallet-company-chart" style="margin-top:8px;"></div>
+    <!-- 🎲 採用ボタン -->
+    <div style="margin-top:10px;">
+      <button onclick="hireNewStaff()" style="width:100%; padding:10px; background:linear-gradient(90deg,#5a3e7a,#ff00aa,#ffd700); color:#fff; font-weight:900; font-size:13px; letter-spacing:2px; border:3px solid #1a1a1a; cursor:pointer; box-shadow:3px 3px 0 #000; text-shadow:1px 1px 0 #000;">
+        🎲 社員ガチャ採用（$50 / ランクE〜SSS）
+      </button>
+    </div>
     <div id="wallet-company-employees" style="margin-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:6px;"></div>
   </div>
   <div class="wallet-section">
@@ -6017,7 +6036,8 @@ function generateStaffMember(forceRank) {
 function initializeCompanyIfNeeded() {
   if (!state) return;
   if (state.gameMode !== 'ranking') return;  // 個人モードは対象外
-  if (!state.company) state.company = { officeLevel: 1, employees: [], totalRentPaid: 0, totalWagesPaid: 0 };
+  if (!state.company) state.company = { officeLevel: 1, employees: [], totalRentPaid: 0, totalWagesPaid: 0, dailyHistory: [] };
+  if (!Array.isArray(state.company.dailyHistory)) state.company.dailyHistory = [];
   if (!Array.isArray(state.company.employees)) state.company.employees = [];
   // 社員がまだいなければ2人雇用した状態でスタート（初期社員は E〜C の新卒レベル）
   if (state.company.employees.length === 0) {
@@ -6037,6 +6057,8 @@ function initializeCompanyIfNeeded() {
     }
   });
   if (!state.company.officeLevel) state.company.officeLevel = 1;
+  // 📊 ベースライン（DAY1始値）を初回だけ記録：以降のchangeが正しく計算できる
+  try { recordCompanyBaseline(); } catch(_){}
 }
 const LIVING_COST_GRACE_DAYS = 7;     // 最初の7日は生活費猶予（新人チュートリアル）
 const DAYS_PER_GAME_YEAR = 30;        // 30日 = 1年（年齢カウントアップ）
@@ -11440,6 +11462,13 @@ function recordCompanyDailyPL() {
   const now = calcCompanyWealthMarket();
   const last = state.company.dailyHistory[state.company.dailyHistory.length - 1];
   const change = last ? (now - last.total) : 0;
+  // 同一日の重複記録は上書きで最新値に
+  if (last && last.day === state.day) {
+    last.total = Math.round(now);
+    last.change = Math.round(change);
+    last.t = Date.now();
+    return;
+  }
   state.company.dailyHistory.push({
     day: state.day,
     total: Math.round(now),
@@ -11448,15 +11477,175 @@ function recordCompanyDailyPL() {
   });
   // 90日分で頭切り
   if (state.company.dailyHistory.length > 90) state.company.dailyHistory.shift();
+  // 🎊 大幅変動の判定＆演出（前日までのデータと比較）
+  if (last) {
+    const prevEntries = state.company.dailyHistory.slice(-6, -1);
+    const judge = checkBigDailyChange(Math.round(change), prevEntries);
+    if (judge.isBigProfit) {
+      setTimeout(() => showBigProfitCelebration(Math.round(change), state.day), 400);
+    } else if (judge.isBigLoss) {
+      setTimeout(() => showBigLossEvent(Math.round(change), state.day), 400);
+    }
+  }
+}
+
+// 🎬 ランキングモード開始時にベースラインを記録（DAY1の始値）
+//    こうすると DAY1終了時に「change = 1日の損益」がきれいに出る
+function recordCompanyBaseline() {
+  if (state?.gameMode !== 'ranking') return;
+  if (!state.company) return;
+  if (!Array.isArray(state.company.dailyHistory)) state.company.dailyHistory = [];
+  if (state.company.dailyHistory.length > 0) return; // 既にあれば何もしない
+  const now = calcCompanyWealthMarket();
+  state.company.dailyHistory.push({
+    day: state.day || 1,
+    total: Math.round(now),
+    change: 0,
+    baseline: true,
+    t: Date.now(),
+  });
+}
+
+// 🎊 大幅利益/損失の判定と派手演出
+const BIG_PROFIT_ABS = 500;   // 絶対額でこれ超えたら大幅利益
+const BIG_PROFIT_MULT = 2.5;   // 直近平均の何倍なら派手
+const BIG_LOSS_ABS = 500;
+
+function checkBigDailyChange(change, prevEntries) {
+  const absPrev = prevEntries.filter(e => !e.baseline).map(e => Math.abs(e.change || 0));
+  const avgPrev = absPrev.length > 0 ? absPrev.reduce((s,x)=>s+x,0) / absPrev.length : 0;
+  const isBigProfit = change >= BIG_PROFIT_ABS || (avgPrev > 0 && change > avgPrev * BIG_PROFIT_MULT);
+  const isBigLoss = change <= -BIG_LOSS_ABS;
+  return { isBigProfit, isBigLoss };
+}
+
+// 🎊 大幅利益の祝福モーダル（黒字決算で社員が沸く感じ）
+function showBigProfitCelebration(change, day) {
+  try {
+    SE.play('newrecord');
+    setTimeout(() => SE.play('success_huge'), 200);
+    setTimeout(() => SE.play('news_great'), 400);
+  } catch(_){}
+  try { showConfettiBurst(); } catch(_){}
+  try { setTimeout(() => showConfettiBurst(), 300); } catch(_){}
+  const oldOv = document.getElementById('big-profit-overlay');
+  if (oldOv) oldOv.remove();
+  const ov = document.createElement('div');
+  ov.id = 'big-profit-overlay';
+  ov.onclick = () => ov.remove();
+  ov.style.cssText = `
+    position: fixed; inset: 0; z-index: 99870;
+    background: radial-gradient(ellipse at center, rgba(255,215,0,0.4) 0%, rgba(58,122,74,0.8) 40%, rgba(0,0,0,0.9) 100%);
+    display: flex; align-items: center; justify-content: center;
+    animation: tlFadeIn 0.4s ease;
+    pointer-events: auto;
+  `;
+  ov.innerHTML = `
+    <div style="position:absolute; inset:0; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,215,0,0.3) 0deg 4deg, transparent 4deg 14deg); animation: tlRaysSpin 8s linear infinite; mix-blend-mode: screen; pointer-events:none;"></div>
+    <div style="position:relative; text-align:center; padding:30px 40px;
+                background:linear-gradient(135deg, #ffd700 0%, #ff6b3d 50%, #3a7a4a 100%);
+                border:5px solid #1a1a1a;
+                box-shadow:10px 10px 0 #000, 0 0 60px rgba(255,215,0,0.7);
+                transform: scale(0.3) rotate(-8deg);
+                animation: tlCeoIn 0.8s 0.1s both ease;">
+      <div style="font-size:16px; color:#fff; font-weight:900; letter-spacing:4px; text-shadow:2px 2px 0 #000; margin-bottom:6px;">
+        🎊 BIG PROFIT DAY 🎊
+      </div>
+      <div style="font-size:14px; color:#fff; font-weight:700; letter-spacing:2px; text-shadow:1px 1px 0 #000; margin-bottom:10px;">
+        DAY ${day} 決算
+      </div>
+      <div style="font-size:56px; font-weight:900; color:#fff; text-shadow:0 0 20px #ffd700, 4px 4px 0 #000; letter-spacing:2px; margin:14px 0;">
+        +$${change.toLocaleString()}
+      </div>
+      <div style="background:rgba(0,0,0,0.5); border:3px solid #ffd700; padding:8px 14px; color:#fff; font-size:13px; font-weight:900; letter-spacing:1px; margin-top:10px;">
+        🏆 社員一同、拍手喝采！<br>
+        💼 社長、この調子で頂点を目指せ！
+      </div>
+      <button onclick="document.getElementById('big-profit-overlay').remove();" style="margin-top:20px; padding:12px 36px; background:linear-gradient(180deg,#ffd700,#ff6b3d); color:#1a1a1a; border:4px solid #1a1a1a; font-weight:900; font-size:15px; letter-spacing:3px; cursor:pointer; box-shadow:5px 5px 0 #000;">
+        ▶ ナイス！
+      </button>
+    </div>
+  `;
+  document.body.appendChild(ov);
+  setTimeout(() => { if (ov.parentNode) ov.remove(); }, 7000);
+}
+
+// 💀 大幅損失の警告モーダル（重苦しい雰囲気）
+function showBigLossEvent(change, day) {
+  try {
+    SE.play('news_terrible');
+  } catch(_){}
+  const oldOv = document.getElementById('big-loss-overlay');
+  if (oldOv) oldOv.remove();
+  const ov = document.createElement('div');
+  ov.id = 'big-loss-overlay';
+  ov.onclick = () => ov.remove();
+  ov.style.cssText = `
+    position: fixed; inset: 0; z-index: 99870;
+    background: radial-gradient(ellipse at center, rgba(185,58,58,0.6) 0%, rgba(0,0,0,0.95) 70%);
+    display: flex; align-items: center; justify-content: center;
+    animation: tlFadeIn 0.4s ease;
+  `;
+  ov.innerHTML = `
+    <div style="text-align:center; padding:30px 40px;
+                background:linear-gradient(135deg, #b93a3a 0%, #1a1a1a 100%);
+                border:5px solid #ffd700;
+                box-shadow:10px 10px 0 #000;
+                transform: scale(0.3);
+                animation: tlCeoIn 0.8s both ease;">
+      <div style="font-size:16px; color:#ffd700; font-weight:900; letter-spacing:4px; margin-bottom:6px;">
+        💀 大 損 失 日 💀
+      </div>
+      <div style="font-size:14px; color:#fff; letter-spacing:2px; margin-bottom:10px;">DAY ${day} 決算</div>
+      <div style="font-size:52px; font-weight:900; color:#ff6060; text-shadow:0 0 20px #b93a3a, 4px 4px 0 #000; margin:14px 0;">
+        -$${Math.abs(change).toLocaleString()}
+      </div>
+      <div style="background:rgba(0,0,0,0.6); border:3px solid #b93a3a; padding:8px 14px; color:#fff; font-size:12px; font-weight:700; letter-spacing:1px; margin-top:10px;">
+        📉 社員から不安の声が…<br>
+        💪 社長、巻き返せ！
+      </div>
+      <button onclick="document.getElementById('big-loss-overlay').remove();" style="margin-top:20px; padding:12px 36px; background:#b93a3a; color:#fff; border:4px solid #ffd700; font-weight:900; font-size:15px; letter-spacing:3px; cursor:pointer; box-shadow:5px 5px 0 #000;">
+        ▶ 立て直す
+      </button>
+    </div>
+  `;
+  document.body.appendChild(ov);
+  setTimeout(() => { if (ov.parentNode) ov.remove(); }, 6000);
 }
 
 // 📉 会社の日次損益バーチャート描画（SVG）
 //    緑=利益、赤=損失、最近30日を表示
 function renderCompanyPLChart() {
-  const hist = state?.company?.dailyHistory || [];
+  const hist = (state?.company?.dailyHistory || []).slice();
   if (hist.length < 1) {
     return '<div style="padding:16px; text-align:center; color:#888; font-size:11px; background:#1a1a1a; border:2px dashed #666;">📈 まだ記録なし — 1日プレイすると損益が残るで</div>';
   }
+  // 🎯 最新記録以降の現在値を「進行中の日の含み損益」として末尾に追加
+  //    こうすると採掘中でもリアルタイムで今日のPLが見える
+  try {
+    const last = hist[hist.length - 1];
+    const nowWealth = calcCompanyWealthMarket();
+    const nowTotal = Math.round(nowWealth);
+    // 今日の記録がまだ無い（= last.day < state.day）なら、今日の進行中バーを追加
+    if (last && last.day < (state?.day || 0)) {
+      hist.push({
+        day: state.day,
+        total: nowTotal,
+        change: nowTotal - last.total,
+        t: Date.now(),
+        pending: true,
+      });
+    } else if (last && last.baseline && last.day === (state?.day || 0)) {
+      // DAY1で記録がベースラインのみ → 今日の進行中含み損益を別バーで表示
+      hist.push({
+        day: state.day,
+        total: nowTotal,
+        change: nowTotal - last.total,
+        t: Date.now(),
+        pending: true,
+      });
+    }
+  } catch(_){}
   const recent = hist.slice(-30);
   // day=1 の記録は change=0 なので表示のみ
   const changes = recent.map(h => h.change || 0);
@@ -11466,7 +11655,7 @@ function renderCompanyPLChart() {
   const midY = h / 2;
   const unit = (h - padY * 2) / 2 / absMax;
 
-  // バー
+  // バー（追跡アニメ：左から順にニョキニョキ立ち上がる）
   let bars = '';
   recent.forEach((entry, i) => {
     const x = 5 + i * barW;
@@ -11474,12 +11663,51 @@ function renderCompanyPLChart() {
     const barH = Math.abs(ch) * unit;
     const color = ch >= 0 ? '#3a7a4a' : '#b93a3a';
     const y = ch >= 0 ? (midY - barH) : midY;
-    bars += `<rect x="${x + 1}" y="${y}" width="${barW - 2}" height="${Math.max(1, barH)}" fill="${color}" stroke="#1a1a1a" stroke-width="0.5"/>`;
-    // 最後のバーはハイライト
+    const isPending = !!entry.pending;
+    const strokeDash = isPending ? 'stroke-dasharray="3,2"' : '';
+    const opacity = isPending ? '0.65' : '1';
+    // CSS animation でバーを下から伸ばす（インデックスごとに遅延）
+    const delay = (i * 60).toFixed(0); // ms
+    const transformOrigin = ch >= 0 ? `${x + barW/2}px ${midY}px` : `${x + barW/2}px ${midY}px`;
+    bars += `<rect x="${x + 1}" y="${y}" width="${barW - 2}" height="${Math.max(1, barH)}" fill="${color}" fill-opacity="${opacity}" stroke="#1a1a1a" stroke-width="${isPending ? 1.2 : 0.5}" ${strokeDash} style="transform-origin: ${transformOrigin}; transform: scaleY(0); animation: plBarRise 0.45s ease forwards; animation-delay: ${delay}ms;"/>`;
+    // 最後のバーはハイライト（同じ遅延で）
     if (i === recent.length - 1 && ch !== 0) {
-      bars += `<text x="${x + barW/2}" y="${ch >= 0 ? y - 3 : y + barH + 10}" fill="${color}" font-size="9" font-weight="900" text-anchor="middle">${ch > 0 ? '+' : ''}$${ch}</text>`;
+      const labelDelay = ((i * 60) + 350).toFixed(0);
+      bars += `<text x="${x + barW/2}" y="${ch >= 0 ? y - 3 : y + barH + 10}" fill="${color}" font-size="9" font-weight="900" text-anchor="middle" style="opacity:0; animation: plLabelFade 0.3s ease forwards; animation-delay: ${labelDelay}ms;">${ch > 0 ? '+' : ''}$${ch}${isPending ? '*' : ''}</text>`;
     }
   });
+
+  // 📈 総資産トレンドライン（追跡アニメで描画）
+  let trendLine = '';
+  if (recent.length >= 2) {
+    const totals = recent.map(e => e.total || 0);
+    const tMin = Math.min(...totals);
+    const tMax = Math.max(...totals);
+    const tRange = (tMax - tMin) || 1;
+    // 上下padding 8px の中で描画
+    const linePadY = 8;
+    const lineH = h - linePadY * 2;
+    const points = recent.map((e, i) => {
+      const x = 5 + i * barW + barW / 2;
+      const ratio = (e.total - tMin) / tRange;
+      const y = linePadY + lineH * (1 - ratio);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    // stroke-dasharray + dashoffset アニメで「描画される」演出
+    const totalLen = recent.length * barW + 100; // 大体の長さ
+    trendLine = `
+      <polyline points="${points}" stroke="#ffd700" stroke-width="1.5" fill="none" opacity="0.85"
+        stroke-dasharray="${totalLen}" stroke-dashoffset="${totalLen}"
+        style="animation: plTrendDraw 1.4s 0.2s ease forwards; filter: drop-shadow(0 0 3px rgba(255,215,0,0.5));"/>
+      ${recent.map((e, i) => {
+        const x = 5 + i * barW + barW / 2;
+        const ratio = (e.total - tMin) / tRange;
+        const y = linePadY + lineH * (1 - ratio);
+        const dotDelay = (i * 60 + 200).toFixed(0);
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#ffd700" opacity="0" style="animation: plLabelFade 0.3s ease forwards; animation-delay: ${dotDelay}ms;"/>`;
+      }).join('')}
+    `;
+  }
 
   // 中央ゼロライン
   const zeroLine = `<line x1="0" y1="${midY}" x2="${w}" y2="${midY}" stroke="#666" stroke-width="1" stroke-dasharray="2,2"/>`;
@@ -11504,11 +11732,12 @@ function renderCompanyPLChart() {
       <svg width="100%" viewBox="0 0 ${w} ${h}" style="background:#0a0a0a; border:1px solid #333;">
         ${zeroLine}
         ${bars}
+        ${trendLine}
         ${dayLabels}
       </svg>
       <div style="display:flex; justify-content:space-between; font-size:10px; margin-top:6px; color:#ccc;">
         <span>🏢 現在総資産 <b style="color:#ffd700;">$${currentTotal.toLocaleString()}</b></span>
-        <span><span style="color:#3a7a4a;">■</span> 利益日 / <span style="color:#b93a3a;">■</span> 損失日</span>
+        <span><span style="color:#3a7a4a;">■</span>利益 / <span style="color:#b93a3a;">■</span>損失 / <span style="color:#ffd700;">─</span>総資産</span>
       </div>
     </div>
   `;
@@ -13506,6 +13735,157 @@ function stopStaffQuoteRotation() {
   if (_staffQuoteTimer) { clearInterval(_staffQuoteTimer); _staffQuoteTimer = null; }
 }
 
+// 🎲 社員を採用（ガチャ）：$50で1人ランダムランクの社員を雇う
+async function hireNewStaff() {
+  if (state?.gameMode !== 'ranking') return;
+  try { initializeCompanyIfNeeded(); } catch(_){}
+  const c = state.company;
+  const office = getOfficeInfo(c.officeLevel || 1);
+  // オフィス定員チェック
+  if ((c.employees || []).length >= office.capacity) {
+    customAlert('', { title: '🏢 オフィスが満員', kind: 'warn',
+      html: `現在のオフィス「${office.name}」の定員は <b>${office.capacity}人</b>。<br>これ以上雇うにはオフィスをアップグレードしてください。`
+    });
+    try { SE.play('btn_cancel'); } catch(_){}
+    return;
+  }
+  // 残高チェック
+  if ((state.usdt || 0) < STAFF_HIRE_COST) {
+    customAlert('', { title: '💵 採用予算不足', kind: 'danger',
+      html: `採用には <b>$${STAFF_HIRE_COST}</b> 必要。<br>会社USDT残高：$${(state.usdt||0).toFixed(2)}`
+    });
+    try { SE.play('btn_cancel'); } catch(_){}
+    return;
+  }
+  // 確認
+  const ok = await customConfirm(
+    `採用手数料 $${STAFF_HIRE_COST} を払って新しい社員を1人雇う？\n（ランクと顔はランダム、SSSが出れば大当たり！）`,
+    { title: '🎲 社員ガチャ', kind: 'ranking', okLabel: '採用する', cancelLabel: 'やめる' }
+  );
+  if (!ok) return;
+  // 採用処理
+  state.usdt -= STAFF_HIRE_COST;
+  const newStaff = generateStaffMember();
+  c.employees.push(newStaff);
+  snapshotWealth('event-bad', -STAFF_HIRE_COST, `🧑‍💼 採用 ${newStaff.name} (${newStaff.rank}) -$${STAFF_HIRE_COST}`);
+  // 演出
+  showHireResultModal(newStaff);
+  // パネル更新
+  try { renderCompanyPanel(); } catch(_){}
+  try { renderLeftSideEmployees(); } catch(_){}
+  try { renderCompanyBoostBanner(); } catch(_){}
+  saveGame();
+}
+
+// 採用結果モーダル：ランクに応じて派手な演出
+function showHireResultModal(employee) {
+  const ri = getStaffRankInfo(employee.rank || 'E');
+  const pInfo = STAFF_PERSONALITIES[employee.personality] || { label: '', quotes: { morning: ['よろしく！'] } };
+  const greet = pInfo.quotes.morning[Math.floor(Math.random() * pInfo.quotes.morning.length)];
+  const isHighRank = ['SSS','SS','S'].includes(employee.rank);
+  // SE
+  try {
+    if (employee.rank === 'SSS') {
+      SE.play('newrecord');
+      setTimeout(() => SE.play('success_huge'), 200);
+      setTimeout(() => SE.play('news_great'), 400);
+    } else if (employee.rank === 'SS') {
+      SE.play('success_huge');
+      setTimeout(() => SE.play('news_great'), 200);
+    } else if (employee.rank === 'S') {
+      SE.play('success_large');
+      setTimeout(() => SE.play('news_good'), 200);
+    } else if (['A','B'].includes(employee.rank)) {
+      SE.play('success_medium');
+    } else {
+      SE.play('purchase');
+    }
+  } catch(_){}
+  if (isHighRank) {
+    try { showConfettiBurst(); } catch(_){}
+    if (employee.rank === 'SSS') setTimeout(() => { try { showConfettiBurst(); } catch(_){} }, 500);
+  }
+  // モーダル生成
+  const oldOv = document.getElementById('hire-result-overlay');
+  if (oldOv) oldOv.remove();
+  const ov = document.createElement('div');
+  ov.id = 'hire-result-overlay';
+  ov.style.cssText = `
+    position: fixed; inset: 0; z-index: 99820;
+    background: radial-gradient(ellipse at center, rgba(90,62,122,0.9) 0%, rgba(0,0,0,0.95) 70%);
+    display: flex; align-items: center; justify-content: center;
+    animation: tlFadeIn 0.4s ease;
+  `;
+  const avatarHtml = employee.avatar && typeof renderAvatarSVG === 'function'
+    ? renderAvatarSVG(employee.avatar, { size: 160 })
+    : '<svg width="160" height="220"><use href="#dojima"/></svg>';
+  ov.innerHTML = `
+    <div style="position:relative; text-align:center; max-width: 420px; padding: 24px 28px;
+                background: ${ri.grad}; border: 5px solid #1a1a1a;
+                box-shadow: 10px 10px 0 #000, 0 0 40px ${ri.color};
+                transform: scale(0.3) rotate(-8deg);
+                animation: tlCeoIn 0.7s 0.1s both ease;">
+      <div style="font-size:13px; color:#fff; letter-spacing:4px; font-weight:900; text-shadow:2px 2px 0 #000; margin-bottom:6px;">
+        🎲 社員ガチャ結果
+      </div>
+      <div style="font-size:48px; font-weight:900; color:#fff; text-shadow:0 0 20px ${ri.color}, 4px 4px 0 #000; margin-bottom:8px; letter-spacing:4px;">
+        ${employee.rank}
+      </div>
+      <div style="background:#fff; border:3px solid #1a1a1a; padding:10px; box-shadow:4px 4px 0 #000;">
+        ${avatarHtml}
+      </div>
+      <div style="font-size:18px; font-weight:900; color:#1a1a1a; background:#ffd700; margin-top:10px; padding:6px 14px; border:3px solid #1a1a1a; box-shadow:3px 3px 0 #000; letter-spacing:1px;">
+        ${employee.name}
+      </div>
+      <div style="font-size:11px; color:#fff; font-weight:900; margin-top:6px; text-shadow:1px 1px 0 #000;">
+        ${pInfo.label}
+      </div>
+      <div style="margin-top:10px; padding:6px 12px; background:rgba(0,0,0,0.6); color:#fff; font-size:11px; font-weight:700; border:2px solid #ffd700;">
+        ⚡ DJM <b style="color:#ffd700;">+${Math.round(ri.djmBonus*100)}%</b>
+        ／ 速度 <b style="color:#7ae890;">+${Math.round(ri.speedBonus*100)}%</b>
+        ／ 日給 <b style="color:#ff8aff;">$${ri.wage}</b>
+      </div>
+      <div style="margin-top:12px; background:#fff8e6; border:3px dashed #b8860b; padding:8px 12px; font-size:13px; font-weight:900; color:#1a1a1a;">
+        💬 「${greet}」
+      </div>
+      <button onclick="document.getElementById('hire-result-overlay').remove();" style="margin-top:18px; padding:12px 36px; background:linear-gradient(180deg,#ffd700,#ff6b3d); color:#1a1a1a; border:4px solid #1a1a1a; font-weight:900; font-size:15px; letter-spacing:2px; cursor:pointer; box-shadow:5px 5px 0 #000;">
+        ▶ よろしく頼む！
+      </button>
+    </div>
+  `;
+  document.body.appendChild(ov);
+  // 7秒で自動閉じ
+  setTimeout(() => { if (ov.parentNode) ov.remove(); }, 7000);
+}
+
+// 🚪 社員解雇（即時、退職金なし）
+async function fireStaff(empId) {
+  if (state?.gameMode !== 'ranking') return;
+  if (!state.company) return;
+  const idx = state.company.employees.findIndex(e => e.id === empId);
+  if (idx < 0) return;
+  const e = state.company.employees[idx];
+  const ri = getStaffRankInfo(e.rank || 'E');
+  const ok = await customConfirm(
+    `「${e.name}」（ランク${e.rank}）を解雇します。\n\n会社の DJM+${Math.round(ri.djmBonus*100)}% / 速度+${Math.round(ri.speedBonus*100)}% のボーナスが失われ、日給 $${ri.wage} の経費が削減されます。\n\n本当に解雇しますか？`,
+    { title: '🚪 解雇の確認', kind: 'danger', okLabel: '解雇する', okKind: 'warn', cancelLabel: 'やめる' }
+  );
+  if (!ok) return;
+  state.company.employees.splice(idx, 1);
+  snapshotWealth('event-bad', 0, `🚪 解雇 ${e.name} (${e.rank})`);
+  showBuyToast(
+    `<div class="ttl">🚪 ${e.name} を解雇</div>
+     <div class="amt">${ri.rank}ランク 退職</div>
+     <div style="font-size:11px; margin-top:4px;">経費 -$${ri.wage}/日 ／ ボーナス消失</div>`,
+    '#b93a3a'
+  );
+  try { SE.play('news_bad'); } catch(_){}
+  try { renderCompanyPanel(); } catch(_){}
+  try { renderLeftSideEmployees(); } catch(_){}
+  try { renderCompanyBoostBanner(); } catch(_){}
+  saveGame();
+}
+
 // 🏢 会社経営パネル描画（ランキングモードのみ）
 function renderCompanyPanel() {
   const section = document.getElementById('wallet-company-section');
@@ -13584,14 +13964,15 @@ function renderCompanyPanel() {
       // 吹き出し：ステータス台詞があればそちら優先、なければ性格台詞
       const bubbleText = e.todayStatusMsg || quote;
       return `
-        <div style="background:#fff; border:2px solid #1a1a1a; padding:6px; font-size:10px; ${e.todayStatus==='absent'?'opacity:0.55; background:#fff0f0;':''}">
+        <div style="background:#fff; border:2px solid #1a1a1a; padding:6px; font-size:10px; position:relative; ${e.todayStatus==='absent'?'opacity:0.55; background:#fff0f0;':''}">
+          <button onclick="event.stopPropagation(); fireStaff('${e.id}');" title="解雇" style="position:absolute; top:2px; right:2px; width:18px; height:18px; background:#b93a3a; color:#fff; border:1px solid #1a1a1a; cursor:pointer; font-size:10px; font-weight:900; line-height:1; padding:0;">✕</button>
           <div style="display:flex; gap:6px; align-items:center;">
             <div style="flex-shrink:0; position:relative;">
               ${e.avatar ? (typeof renderAvatarSVG === 'function' ? renderAvatarSVG(e.avatar, {size: 40}) : '👤') : '👤'}
               <div style="position:absolute; top:-4px; right:-6px;">${rankBadge}</div>
             </div>
             <div style="flex:1; min-width:0;">
-              <div style="font-weight:900; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${e.name}${statusBadge}</div>
+              <div style="font-weight:900; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:18px;">${e.name}${statusBadge}</div>
               <div style="font-size:9px; color:#5a3e7a; font-weight:900;">${pLabel}</div>
               <div style="display:flex; gap:6px; font-size:10px;">
                 <span style="color:#b93a3a;">−$${wageDisp}</span>
@@ -14749,6 +15130,19 @@ document.addEventListener('visibilitychange', () => {
 
 // ページ読み込み時に開始
 window.addEventListener('load', () => {
+  // 🧲 サウンド・ウォレットボタンを .game 内に移動してスケール座標に追従させる
+  //    （viewport-fixed だとタブレット縮小時にゲームHUDと重なるバグの対策）
+  try {
+    const gameEl = document.querySelector('.game');
+    const targets = ['sound-btn', 'sound-modal', 'wallet-modal'];
+    targets.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && gameEl && el.parentNode !== gameEl) gameEl.appendChild(el);
+    });
+    // wallet-btn は id が無いのでクラスで取得
+    const walletBtn = document.querySelector('body > .wallet-btn');
+    if (walletBtn && gameEl) gameEl.appendChild(walletBtn);
+  } catch(_){}
   try { migrateLegacySave(); } catch(e) {}
   // 🔒 鉱山スキーマ補完（既存セーブにrequiredRankが無い場合の保険）
   try { ensureMineStatesSchema(); } catch(e) {}
