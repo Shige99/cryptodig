@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>目指せ一獲千金どうじまくん 第1話〜第3話</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f4f1e8;
+    --tone: #d9d4c2;
+    --accent: #b8860b;
+    --red: #b93a3a;
+    --blue: #2e4b8a;
+    --purple: #5a3e7a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #2a2a2a;
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    color: var(--ink);
+    padding: 20px 0;
+  }
+  .book {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .cover {
+    background: linear-gradient(135deg, #f4e4a1 0%, #d4a64a 50%, #8b5a2b 100%);
+    padding: 80px 40px;
+    text-align: center;
+    border-radius: 6px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 2px, transparent 3px),
+      radial-gradient(circle at 70% 60%, rgba(255,255,255,0.25) 2px, transparent 3px),
+      radial-gradient(circle at 50% 80%, rgba(255,255,255,0.2) 2px, transparent 3px);
+    background-size: 80px 80px, 120px 120px, 100px 100px;
+    pointer-events: none;
+  }
+  .cover h1 {
+    font-size: 68px;
+    font-weight: 900;
+    color: #1a1a1a;
+    text-shadow: 3px 3px 0 #fff, 6px 6px 0 #b93a3a;
+    letter-spacing: -2px;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .cover h2 {
+    font-size: 32px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #1a1a1a;
+    position: relative;
+  }
+  .cover .sub {
+    margin-top: 40px;
+    font-size: 18px;
+    color: #2a1a00;
+    position: relative;
+  }
+  .cover .eyebrows-preview {
+    position: relative;
+    margin: 30px auto 20px;
+    width: 220px;
+    height: 80px;
+  }
+
+  .episode-title {
+    background: var(--paper);
+    border: 4px solid var(--ink);
+    padding: 40px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .episode-title .number {
+    font-size: 20px;
+    color: var(--red);
+    font-weight: 900;
+    letter-spacing: 4px;
+  }
+  .episode-title .title {
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--ink);
+    margin-top: 10px;
+    letter-spacing: -1px;
+  }
+
+  .page {
+    background: var(--paper);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    display: grid;
+    gap: 10px;
+  }
+  .page.p-2col { grid-template-columns: 1fr 1fr; }
+  .page.p-3col { grid-template-columns: 1fr 1fr 1fr; }
+
+  .panel {
+    position: relative;
+    background: #fff;
+    border: 3px solid var(--ink);
+    overflow: hidden;
+    min-height: 200px;
+    padding: 0;
+  }
+  .panel.wide { grid-column: 1 / -1; }
+  .panel.tall { grid-row: span 2; min-height: 420px; }
+
+  .bg {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bg-night    { background: linear-gradient(180deg, #1a2340 0%, #4b5a8a 100%); }
+  .bg-pachinko { background:
+    repeating-linear-gradient(90deg, #ffd966 0 8px, #ffb84d 8px 16px),
+    #ff9a3d;
+    background-blend-mode: multiply;
+  }
+  .bg-home     { background: linear-gradient(180deg, #f8e6b8 0%, #e6c88a 100%); }
+  .bg-mine     { background: linear-gradient(180deg, #3a2a1a 0%, #1a1208 60%, #000 100%); }
+  .bg-sky      { background: linear-gradient(180deg, #8ec5e8 0%, #d9ecf5 100%); }
+  .bg-office   { background: linear-gradient(180deg, #e8e0c4 0%, #c0b090 100%); }
+  .bg-flash    { background: radial-gradient(circle at 50% 50%, #fff 0%, #ffe680 30%, #ffa500 60%, #7a3a00 100%); }
+  .bg-sunset   { background: linear-gradient(180deg, #ff6b3d 0%, #ffa84d 50%, #ffd97a 100%); }
+  .bg-white    { background: #fff; }
+  .bg-tone     { background:
+    repeating-radial-gradient(circle, #000 0 2px, transparent 2px 6px),
+    #fff;
+    background-size: 10px 10px;
+    background-blend-mode: multiply;
+  }
+  .bg-speed    { background:
+    repeating-linear-gradient(45deg, #000 0 3px, transparent 3px 12px),
+    #ffeb99;
+  }
+  .bg-concentration {
+    background:
+      repeating-conic-gradient(from 0deg at 50% 50%, #000 0deg 4deg, transparent 4deg 10deg),
+      radial-gradient(circle at 50% 50%, #fff 0%, #fff 20%, #ffeb99 100%);
+  }
+  .bg-sparkle {
+    background:
+      radial-gradient(circle at 30% 30%, #fff 0 4px, transparent 5px),
+      radial-gradient(circle at 70% 60%, #fff 0 3px, transparent 4px),
+      radial-gradient(circle at 50% 80%, #fff 0 3px, transparent 4px),
+      linear-gradient(135deg, #ffd966 0%, #c9a441 100%);
+  }
+
+  /* キャラ配置 */
+  .char {
+    position: absolute;
+    bottom: 10px;
+  }
+  .char.left { left: 10px; }
+  .char.right { right: 10px; }
+  .char.center { left: 50%; transform: translateX(-50%); }
+  .char svg { display: block; }
+
+  /* 吹き出し */
+  .bubble {
+    position: absolute;
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 40% 50% 45% 55% / 50% 45% 55% 50%;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    max-width: 60%;
+    z-index: 5;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    width: 20px; height: 20px;
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+  }
+  .bubble.tl { top: 10px; left: 10px; }
+  .bubble.tr { top: 10px; right: 10px; }
+  .bubble.bl { bottom: 10px; left: 10px; }
+  .bubble.br { bottom: 10px; right: 10px; }
+  .bubble.tl::after { bottom: -12px; left: 30%; }
+  .bubble.tr::after { bottom: -12px; right: 30%; }
+  .bubble.bl::after { top: -12px; left: 30%; transform: rotate(225deg); }
+  .bubble.br::after { top: -12px; right: 30%; transform: rotate(225deg); }
+
+  /* モノローグ（角ばった吹き出し） */
+  .bubble.mono {
+    border-radius: 4px;
+    background: #fff8e6;
+  }
+  .bubble.mono::after {
+    background: #fff8e6;
+  }
+  /* 思考吹き出し（雲形） */
+  .bubble.think {
+    border-radius: 50%;
+  }
+  .bubble.think::after {
+    border-radius: 50%;
+    width: 10px; height: 10px;
+  }
+  /* 叫び吹き出し（ギザギザ） */
+  .bubble.shout {
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 0;
+    clip-path: polygon(
+      0 20%, 5% 10%, 12% 22%, 20% 5%, 30% 18%, 40% 0,
+      52% 15%, 60% 3%, 72% 18%, 82% 6%, 92% 20%, 100% 12%,
+      95% 30%, 100% 45%, 93% 55%, 100% 70%, 90% 80%, 95% 95%,
+      80% 88%, 72% 100%, 60% 90%, 50% 100%, 40% 88%, 28% 100%,
+      18% 90%, 8% 100%, 0 85%, 6% 70%, 0 55%, 5% 40%
+    );
+    font-weight: 900;
+  }
+  .bubble.shout::after { display: none; }
+  /* ナレーション */
+  .narration {
+    position: absolute;
+    background: #fff;
+    border: 2px solid var(--ink);
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    top: 10px; left: 10px;
+    z-index: 5;
+    max-width: 70%;
+  }
+
+  /* 擬音 */
+  .sfx {
+    position: absolute;
+    font-weight: 900;
+    letter-spacing: -2px;
+    color: var(--ink);
+    -webkit-text-stroke: 1.5px #fff;
+    text-shadow: 3px 3px 0 #fff, 5px 5px 0 var(--red);
+    z-index: 4;
+    pointer-events: none;
+  }
+  .sfx.big   { font-size: 48px; }
+  .sfx.huge  { font-size: 72px; }
+  .sfx.mega  { font-size: 96px; }
+  .sfx.rot-l { transform: rotate(-12deg); }
+  .sfx.rot-r { transform: rotate(10deg); }
+  .sfx.gold  { color: var(--accent); text-shadow: 3px 3px 0 #fff, 5px 5px 0 #8b5a2b; }
+  .sfx.dark  { color: #fff; -webkit-text-stroke: 1.5px #000; text-shadow: 3px 3px 0 #000; }
+
+  /* キャプション（コマ番号） */
+  .cap {
+    position: absolute;
+    top: 4px; left: 4px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 10;
+    font-weight: 700;
+  }
+  /* シーン見出し */
+  .scene {
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 20px;
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    border-left: 8px solid var(--red);
+  }
+  .end-mark {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--paper);
+    padding: 30px;
+    letter-spacing: 10px;
+  }
+  .note {
+    background: var(--paper);
+    padding: 16px 24px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--accent);
+  }
+  /* アップ用の顔コマ */
+  .face-zoom {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+<div class="book">
+
+<!-- =================== 表紙 =================== -->
+<div class="cover">
+  <div class="sub" style="letter-spacing:6px;font-weight:900;">ブリリアンクリプト・パロディ</div>
+  <div class="eyebrows-preview">
+    <svg viewBox="0 0 220 80" width="220" height="80">
+      <!-- 超極太眉毛のアイコン -->
+      <path d="M 20 40 Q 50 20 95 40 L 95 55 Q 50 35 20 55 Z" fill="#1a1a1a"/>
+      <path d="M 125 40 Q 170 20 200 40 L 200 55 Q 170 35 125 55 Z" fill="#1a1a1a"/>
+      <circle cx="60" cy="60" r="3" fill="#1a1a1a"/>
+      <circle cx="160" cy="60" r="3" fill="#1a1a1a"/>
+    </svg>
+  </div>
+  <h1>目指せ一獲千金<br>どうじまくん</h1>
+  <h2>〜鉱山で家族を幸せにするんや〜</h2>
+  <div class="sub">第1話〜第3話｜原作：いんぐちゃん ｜ 作画協力：AIくん</div>
+</div>
+
+<div class="note">
+  <strong>※ 注記：</strong> これはHTMLで作った「漫画ビジュアル試作」です。キャラクターはSVGによるデフォルメ画、背景は効果表現中心。セリフ・コマ割り・擬音・集中線は本格仕様。紙の漫画と違い、上→下の縦スクロールで読み進めてください。
+</div>
+
+<!-- ==================================================================
+     ★ キャラSVG定義（シンボル）
+     ================================================================== -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- どうじまくん（ノーマル） -->
+    <symbol id="dojima" viewBox="0 0 120 160">
+      <!-- スーツ -->
+      <path d="M 30 120 L 20 160 L 100 160 L 90 120 Z" fill="#3a3a4a"/>
+      <path d="M 55 120 L 55 160 L 65 160 L 65 120" fill="#e74c3c"/>
+      <rect x="35" y="100" width="50" height="30" fill="#3a3a4a"/>
+      <path d="M 50 100 L 60 115 L 70 100 L 72 110 L 60 125 L 48 110 Z" fill="#fff"/>
+      <!-- 首 -->
+      <rect x="52" y="85" width="16" height="15" fill="#f4d0a0"/>
+      <!-- 顔 -->
+      <ellipse cx="60" cy="60" rx="32" ry="36" fill="#f4d0a0"/>
+      <!-- 髪 -->
+      <path d="M 28 50 Q 30 20 60 18 Q 90 20 92 50 L 92 38 Q 85 28 60 28 Q 35 28 28 38 Z" fill="#2a2a2a"/>
+      <!-- 極太眉毛 ★ -->
+      <path d="M 32 52 Q 42 42 55 52 L 55 60 Q 42 50 32 60 Z" fill="#1a1a1a"/>
+      <path d="M 65 52 Q 78 42 88 52 L 88 60 Q 78 50 65 60 Z" fill="#1a1a1a"/>
+      <!-- 目 -->
+      <ellipse cx="45" cy="68" rx="2.5" ry="3.5" fill="#1a1a1a"/>
+      <ellipse cx="75" cy="68" rx="2.5" ry="3.5" fill="#1a1a1a"/>
+      <!-- 鼻・口 -->
+      <path d="M 60 73 L 58 80 L 62 80 Z" fill="#c4a080" opacity="0.4"/>
+      <path d="M 52 88 Q 60 90 68 88" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+    </symbol>
+
+    <!-- どうじまくん（絶望） -->
+    <symbol id="dojima-sad" viewBox="0 0 120 160">
+      <path d="M 30 120 L 20 160 L 100 160 L 90 120 Z" fill="#3a3a4a"/>
+      <path d="M 55 120 L 55 160 L 65 160 L 65 120" fill="#e74c3c"/>
+      <rect x="35" y="100" width="50" height="30" fill="#3a3a4a"/>
+      <path d="M 50 100 L 60 115 L 70 100 L 72 110 L 60 125 L 48 110 Z" fill="#fff"/>
+      <rect x="52" y="85" width="16" height="15" fill="#f4d0a0"/>
+      <ellipse cx="60" cy="60" rx="32" ry="36" fill="#e8c090"/>
+      <path d="M 28 50 Q 30 20 60 18 Q 90 20 92 50 L 92 38 Q 85 28 60 28 Q 35 28 28 38 Z" fill="#2a2a2a"/>
+      <!-- 八の字眉 -->
+      <path d="M 32 48 Q 42 58 55 58 L 55 65 Q 42 65 32 56 Z" fill="#1a1a1a"/>
+      <path d="M 65 58 Q 78 58 88 48 L 88 56 Q 78 65 65 65 Z" fill="#1a1a1a"/>
+      <!-- 泣き目 -->
+      <path d="M 40 70 Q 45 66 50 70" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <path d="M 70 70 Q 75 66 80 70" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <!-- 涙 -->
+      <ellipse cx="42" cy="78" rx="2" ry="4" fill="#7ac5e8"/>
+      <ellipse cx="78" cy="78" rx="2" ry="4" fill="#7ac5e8"/>
+      <path d="M 60 73 L 58 80 L 62 80 Z" fill="#c4a080" opacity="0.4"/>
+      <path d="M 54 90 Q 60 86 66 90" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+    </symbol>
+
+    <!-- どうじまくん（決意・眉稲妻） -->
+    <symbol id="dojima-fire" viewBox="0 0 120 160">
+      <path d="M 30 120 L 20 160 L 100 160 L 90 120 Z" fill="#3a3a4a"/>
+      <path d="M 55 120 L 55 160 L 65 160 L 65 120" fill="#e74c3c"/>
+      <rect x="35" y="100" width="50" height="30" fill="#3a3a4a"/>
+      <path d="M 50 100 L 60 115 L 70 100 L 72 110 L 60 125 L 48 110 Z" fill="#fff"/>
+      <rect x="52" y="85" width="16" height="15" fill="#f4d0a0"/>
+      <ellipse cx="60" cy="60" rx="32" ry="36" fill="#f4d0a0"/>
+      <path d="M 28 50 Q 30 20 60 18 Q 90 20 92 50 L 92 38 Q 85 28 60 28 Q 35 28 28 38 Z" fill="#2a2a2a"/>
+      <!-- 稲妻眉 -->
+      <path d="M 28 55 L 36 45 L 44 55 L 52 45 L 55 58 L 44 60 L 36 52 L 28 62 Z" fill="#1a1a1a"/>
+      <path d="M 65 58 L 68 45 L 76 55 L 84 45 L 92 55 L 84 62 L 76 52 L 68 60 Z" fill="#1a1a1a"/>
+      <!-- キリッと目 -->
+      <path d="M 38 68 L 48 68" stroke="#1a1a1a" stroke-width="2.5"/>
+      <path d="M 72 68 L 82 68" stroke="#1a1a1a" stroke-width="2.5"/>
+      <circle cx="43" cy="68" r="1.5" fill="#1a1a1a"/>
+      <circle cx="77" cy="68" r="1.5" fill="#1a1a1a"/>
+      <path d="M 60 73 L 58 80 L 62 80 Z" fill="#c4a080" opacity="0.4"/>
+      <path d="M 48 90 L 72 90" stroke="#1a1a1a" stroke-width="2.5" fill="none"/>
+    </symbol>
+
+    <!-- どうじまくん（驚き） -->
+    <symbol id="dojima-shock" viewBox="0 0 120 160">
+      <path d="M 30 120 L 20 160 L 100 160 L 90 120 Z" fill="#3a3a4a"/>
+      <path d="M 55 120 L 55 160 L 65 160 L 65 120" fill="#e74c3c"/>
+      <rect x="35" y="100" width="50" height="30" fill="#3a3a4a"/>
+      <path d="M 50 100 L 60 115 L 70 100 L 72 110 L 60 125 L 48 110 Z" fill="#fff"/>
+      <rect x="52" y="85" width="16" height="15" fill="#f4d0a0"/>
+      <ellipse cx="60" cy="60" rx="32" ry="36" fill="#f4d0a0"/>
+      <path d="M 28 50 Q 30 20 60 18 Q 90 20 92 50 L 92 38 Q 85 28 60 28 Q 35 28 28 38 Z" fill="#2a2a2a"/>
+      <!-- 跳ね上がり眉 -->
+      <path d="M 28 38 Q 42 28 55 40 L 55 48 Q 42 36 28 46 Z" fill="#1a1a1a"/>
+      <path d="M 65 40 Q 78 28 92 38 L 92 46 Q 78 36 65 48 Z" fill="#1a1a1a"/>
+      <!-- 見開き目 -->
+      <circle cx="45" cy="70" r="5" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+      <circle cx="45" cy="70" r="2.5" fill="#1a1a1a"/>
+      <circle cx="75" cy="70" r="5" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+      <circle cx="75" cy="70" r="2.5" fill="#1a1a1a"/>
+      <path d="M 60 73 L 58 80 L 62 80 Z" fill="#c4a080" opacity="0.4"/>
+      <ellipse cx="60" cy="92" rx="5" ry="4" fill="#1a1a1a"/>
+    </symbol>
+
+    <!-- 謎の男 -->
+    <symbol id="mystery" viewBox="0 0 120 160">
+      <path d="M 25 110 L 15 160 L 105 160 L 95 110 Z" fill="#1a1a1a"/>
+      <rect x="30" y="95" width="60" height="30" fill="#1a1a1a"/>
+      <rect x="52" y="80" width="16" height="15" fill="#e8c090"/>
+      <ellipse cx="60" cy="55" rx="30" ry="34" fill="#e8c090"/>
+      <!-- ハット -->
+      <ellipse cx="60" cy="25" rx="42" ry="6" fill="#2a2a2a"/>
+      <rect x="32" y="10" width="56" height="18" rx="2" fill="#2a2a2a"/>
+      <rect x="32" y="26" width="56" height="3" fill="#6a3a1a"/>
+      <!-- サングラス -->
+      <rect x="30" y="55" width="22" height="12" rx="3" fill="#1a1a1a"/>
+      <rect x="68" y="55" width="22" height="12" rx="3" fill="#1a1a1a"/>
+      <rect x="52" y="58" width="16" height="3" fill="#1a1a1a"/>
+      <!-- 口 -->
+      <path d="M 50 85 Q 60 80 70 85" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <!-- つるはしピンバッジ -->
+      <circle cx="40" cy="130" r="6" fill="#b8860b" stroke="#1a1a1a" stroke-width="1"/>
+      <path d="M 36 130 L 44 128 M 40 126 L 40 134" stroke="#1a1a1a" stroke-width="1.5"/>
+    </symbol>
+
+    <!-- 花子 -->
+    <symbol id="hanako" viewBox="0 0 120 160">
+      <path d="M 28 115 L 20 160 L 100 160 L 92 115 Z" fill="#c99a5e"/>
+      <rect x="35" y="95" width="50" height="25" fill="#c99a5e"/>
+      <circle cx="60" cy="108" r="3" fill="#f4e4a1"/>
+      <rect x="52" y="80" width="16" height="15" fill="#f4d0a0"/>
+      <ellipse cx="60" cy="55" rx="30" ry="33" fill="#f4d0a0"/>
+      <!-- 髪（ボブ） -->
+      <path d="M 26 45 Q 26 18 60 16 Q 94 18 94 45 L 94 55 Q 94 62 88 66 L 88 42 Q 82 32 60 30 Q 38 32 32 42 L 32 66 Q 26 62 26 55 Z" fill="#4a2a1a"/>
+      <!-- 眉 -->
+      <path d="M 35 48 L 48 46" stroke="#2a1a0a" stroke-width="2"/>
+      <path d="M 72 46 L 85 48" stroke="#2a1a0a" stroke-width="2"/>
+      <!-- 目 -->
+      <ellipse cx="42" cy="58" rx="3" ry="4" fill="#1a1a1a"/>
+      <ellipse cx="78" cy="58" rx="3" ry="4" fill="#1a1a1a"/>
+      <circle cx="43" cy="57" r="1" fill="#fff"/>
+      <circle cx="79" cy="57" r="1" fill="#fff"/>
+      <!-- 口 -->
+      <path d="M 54 78 Q 60 82 66 78" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+      <!-- 頬 -->
+      <ellipse cx="42" cy="70" rx="5" ry="2" fill="#f4b8a0" opacity="0.6"/>
+      <ellipse cx="78" cy="70" rx="5" ry="2" fill="#f4b8a0" opacity="0.6"/>
+    </symbol>
+
+    <!-- みらい -->
+    <symbol id="mirai" viewBox="0 0 100 140">
+      <path d="M 25 100 L 20 140 L 80 140 L 75 100 Z" fill="#ffb3d9"/>
+      <rect x="35" y="88" width="30" height="18" fill="#ffb3d9"/>
+      <rect x="45" y="78" width="10" height="12" fill="#f4d0a0"/>
+      <ellipse cx="50" cy="55" rx="26" ry="28" fill="#f4d0a0"/>
+      <!-- 髪（ツインテール） -->
+      <path d="M 24 45 Q 24 14 50 12 Q 76 14 76 45 L 76 36 Q 70 25 50 24 Q 30 25 24 36 Z" fill="#6a4a2a"/>
+      <ellipse cx="20" cy="60" rx="8" ry="20" fill="#6a4a2a"/>
+      <ellipse cx="80" cy="60" rx="8" ry="20" fill="#6a4a2a"/>
+      <circle cx="20" cy="40" r="5" fill="#ff6b9d"/>
+      <circle cx="80" cy="40" r="5" fill="#ff6b9d"/>
+      <!-- 眉 -->
+      <path d="M 32 48 L 42 46" stroke="#2a1a0a" stroke-width="2"/>
+      <path d="M 58 46 L 68 48" stroke="#2a1a0a" stroke-width="2"/>
+      <!-- 大きな目 -->
+      <ellipse cx="37" cy="60" rx="4" ry="6" fill="#1a1a1a"/>
+      <ellipse cx="63" cy="60" rx="4" ry="6" fill="#1a1a1a"/>
+      <circle cx="38" cy="58" r="1.5" fill="#fff"/>
+      <circle cx="64" cy="58" r="1.5" fill="#fff"/>
+      <!-- 笑口 -->
+      <path d="M 42 78 Q 50 84 58 78" stroke="#1a1a1a" stroke-width="1.8" fill="none"/>
+      <ellipse cx="37" cy="72" rx="4" ry="2" fill="#ff9db0" opacity="0.7"/>
+      <ellipse cx="63" cy="72" rx="4" ry="2" fill="#ff9db0" opacity="0.7"/>
+    </symbol>
+
+    <!-- ほるん社長 -->
+    <symbol id="horun" viewBox="0 0 120 160">
+      <path d="M 28 115 L 18 160 L 102 160 L 92 115 Z" fill="#d4a03a"/>
+      <rect x="35" y="95" width="50" height="25" fill="#d4a03a"/>
+      <!-- 金のつるはしペンダント -->
+      <circle cx="60" cy="110" r="4" fill="#ffd700" stroke="#1a1a1a" stroke-width="1"/>
+      <path d="M 56 110 L 64 108 M 60 106 L 60 114" stroke="#8b5a2b" stroke-width="1.5"/>
+      <rect x="52" y="82" width="16" height="15" fill="#e8b890"/>
+      <ellipse cx="60" cy="55" rx="32" ry="34" fill="#e8b890"/>
+      <!-- ヘルメット -->
+      <path d="M 22 42 Q 22 20 60 18 Q 98 20 98 42 L 98 48 L 22 48 Z" fill="#ffd700" stroke="#1a1a1a" stroke-width="1.5"/>
+      <rect x="22" y="44" width="76" height="6" fill="#8b5a2b"/>
+      <!-- 白髪（もみあげ） -->
+      <ellipse cx="26" cy="60" rx="6" ry="12" fill="#f0f0f0"/>
+      <ellipse cx="94" cy="60" rx="6" ry="12" fill="#f0f0f0"/>
+      <!-- 眉 -->
+      <path d="M 32 54 Q 42 50 50 54" stroke="#f0f0f0" stroke-width="4" fill="none"/>
+      <path d="M 70 54 Q 78 50 88 54" stroke="#f0f0f0" stroke-width="4" fill="none"/>
+      <!-- 目 -->
+      <circle cx="42" cy="64" r="3" fill="#1a1a1a"/>
+      <circle cx="78" cy="64" r="3" fill="#1a1a1a"/>
+      <!-- ひげ -->
+      <path d="M 44 84 Q 60 90 76 84 L 76 92 Q 60 96 44 92 Z" fill="#f0f0f0"/>
+      <!-- 口 -->
+      <path d="M 52 90 Q 60 86 68 90" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+    </symbol>
+
+    <!-- はるきち -->
+    <symbol id="harukichi" viewBox="0 0 110 160">
+      <!-- ジャケット -->
+      <path d="M 25 115 L 15 160 L 95 160 L 85 115 Z" fill="#ff6b9d"/>
+      <rect x="32" y="95" width="46" height="25" fill="#fff"/>
+      <rect x="50" y="85" width="12" height="14" fill="#f4d0a0"/>
+      <ellipse cx="55" cy="55" rx="28" ry="31" fill="#f4d0a0"/>
+      <!-- 髪（ポニテ風） -->
+      <path d="M 24 45 Q 24 16 55 14 Q 86 16 86 45 L 86 38 Q 78 26 55 26 Q 32 26 24 38 Z" fill="#2a2a2a"/>
+      <path d="M 75 30 Q 95 40 98 70 Q 90 62 82 55 Z" fill="#2a2a2a"/>
+      <!-- 前髪 -->
+      <path d="M 30 42 Q 40 30 55 36 Q 70 30 80 42 L 78 50 Q 68 40 55 46 Q 42 40 32 50 Z" fill="#2a2a2a"/>
+      <!-- 眉 -->
+      <path d="M 30 50 Q 38 46 44 50" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <path d="M 66 50 Q 72 46 80 50" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <!-- 大きな目 -->
+      <ellipse cx="40" cy="62" rx="4" ry="6" fill="#1a1a1a"/>
+      <ellipse cx="70" cy="62" rx="4" ry="6" fill="#1a1a1a"/>
+      <circle cx="41" cy="60" r="1.5" fill="#fff"/>
+      <circle cx="71" cy="60" r="1.5" fill="#fff"/>
+      <!-- 口 -->
+      <path d="M 46 82 Q 55 88 64 82" stroke="#1a1a1a" stroke-width="1.8" fill="none"/>
+      <path d="M 50 82 L 60 82" stroke="#fff" stroke-width="2"/>
+      <ellipse cx="40" cy="74" rx="5" ry="2" fill="#ff9db0" opacity="0.7"/>
+      <ellipse cx="70" cy="74" rx="5" ry="2" fill="#ff9db0" opacity="0.7"/>
+    </symbol>
+
+    <!-- いんぐちゃん -->
+    <symbol id="ing" viewBox="0 0 110 160">
+      <!-- パーカー -->
+      <path d="M 20 115 L 10 160 L 100 160 L 90 115 Z" fill="#2a2a3a"/>
+      <path d="M 25 100 Q 55 88 85 100 L 90 115 L 20 115 Z" fill="#2a2a3a"/>
+      <!-- フード紐 -->
+      <path d="M 45 100 L 43 118 M 65 100 L 67 118" stroke="#fff" stroke-width="1.5"/>
+      <rect x="50" y="90" width="10" height="10" fill="#e8c090"/>
+      <ellipse cx="55" cy="60" rx="28" ry="30" fill="#e8c090"/>
+      <!-- 髪（黒ストレート） -->
+      <path d="M 24 48 Q 24 18 55 16 Q 86 18 86 48 L 86 40 Q 78 28 55 28 Q 32 28 24 40 Z" fill="#0a0a0a"/>
+      <path d="M 26 44 Q 40 60 30 80 L 24 70 Z" fill="#0a0a0a"/>
+      <path d="M 84 44 Q 70 60 80 80 L 86 70 Z" fill="#0a0a0a"/>
+      <!-- 眉（細い） -->
+      <path d="M 34 52 L 44 50" stroke="#0a0a0a" stroke-width="1.8"/>
+      <path d="M 66 50 L 76 52" stroke="#0a0a0a" stroke-width="1.8"/>
+      <!-- 半目（無表情） -->
+      <path d="M 36 65 L 46 65" stroke="#0a0a0a" stroke-width="2.5"/>
+      <path d="M 64 65 L 74 65" stroke="#0a0a0a" stroke-width="2.5"/>
+      <!-- 口（小） -->
+      <path d="M 52 84 L 58 84" stroke="#1a1a1a" stroke-width="1.5"/>
+      <!-- PC -->
+      <rect x="20" y="130" width="70" height="22" fill="#3a3a3a" stroke="#1a1a1a" stroke-width="1.5"/>
+      <text x="55" y="145" text-anchor="middle" font-size="8" fill="#7ae890">{ code }</text>
+    </symbol>
+
+    <!-- マキシー -->
+    <symbol id="maxie" viewBox="0 0 120 160">
+      <!-- 白スーツ -->
+      <path d="M 28 115 L 18 160 L 102 160 L 92 115 Z" fill="#f8f8f0"/>
+      <path d="M 40 115 L 60 130 L 80 115 L 80 130 L 60 150 L 40 130 Z" fill="#f8f8f0" stroke="#1a1a1a" stroke-width="1"/>
+      <rect x="35" y="95" width="50" height="25" fill="#0a0a0a"/>
+      <!-- 翡翠ネックレス -->
+      <circle cx="60" cy="108" r="5" fill="#3ab870" stroke="#ffd700" stroke-width="1.5"/>
+      <rect x="52" y="82" width="16" height="15" fill="#e8b878"/>
+      <ellipse cx="60" cy="55" rx="30" ry="32" fill="#e8b878"/>
+      <!-- 髪（オールバック） -->
+      <path d="M 28 42 Q 30 20 60 18 Q 90 20 92 42 L 92 32 Q 70 24 60 26 Q 40 22 28 32 Z" fill="#1a0a00"/>
+      <path d="M 40 32 L 45 22 M 55 30 L 58 20 M 70 32 L 73 22" stroke="#3a1a00" stroke-width="1"/>
+      <!-- 細眉 -->
+      <path d="M 32 48 Q 40 44 50 48" stroke="#1a0a00" stroke-width="1.8" fill="none"/>
+      <path d="M 70 48 Q 80 44 88 48" stroke="#1a0a00" stroke-width="1.8" fill="none"/>
+      <!-- 目（にやけ） -->
+      <path d="M 36 62 Q 42 58 48 62" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <path d="M 72 62 Q 78 58 84 62" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <!-- ニヤリ口 -->
+      <path d="M 48 82 Q 60 92 72 82" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <path d="M 52 82 L 68 82" stroke="#fff" stroke-width="2"/>
+    </symbol>
+
+    <!-- つるはし -->
+    <symbol id="pickaxe" viewBox="0 0 100 100">
+      <rect x="46" y="20" width="8" height="75" fill="#8b5a2b" stroke="#1a1a1a" stroke-width="1"/>
+      <path d="M 10 15 L 90 15 L 85 30 L 15 30 Z" fill="#7a7a7a" stroke="#1a1a1a" stroke-width="1.5"/>
+      <path d="M 20 15 L 25 5 L 30 15 M 70 15 L 75 5 L 80 15" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+    </symbol>
+
+    <!-- 金のつるはし -->
+    <symbol id="goldpick" viewBox="0 0 100 100">
+      <rect x="46" y="20" width="8" height="75" fill="#8b5a2b" stroke="#1a1a1a" stroke-width="1"/>
+      <path d="M 10 15 L 90 15 L 85 30 L 15 30 Z" fill="#ffd700" stroke="#1a1a1a" stroke-width="1.5"/>
+      <circle cx="30" cy="22" r="2" fill="#fff"/>
+    </symbol>
+
+    <!-- 宝石（ダイヤ） -->
+    <symbol id="gem" viewBox="0 0 80 80">
+      <path d="M 40 10 L 70 35 L 40 70 L 10 35 Z" fill="#b5e8f5" stroke="#1a1a1a" stroke-width="2"/>
+      <path d="M 40 10 L 10 35 L 25 35 L 40 10 M 40 10 L 70 35 L 55 35 L 40 10 M 25 35 L 40 70 L 55 35" stroke="#1a1a1a" stroke-width="1" fill="none"/>
+      <path d="M 40 15 L 50 25" stroke="#fff" stroke-width="2"/>
+    </symbol>
+
+    <!-- 巨大ダイヤ -->
+    <symbol id="bigdia" viewBox="0 0 160 160">
+      <path d="M 80 10 L 150 70 L 80 150 L 10 70 Z" fill="#e0f5ff" stroke="#1a1a1a" stroke-width="3"/>
+      <path d="M 80 10 L 10 70 L 40 70 L 80 10 M 80 10 L 150 70 L 120 70 L 80 10 M 40 70 L 80 150 L 120 70" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <path d="M 30 50 L 60 70 M 100 30 L 130 60" stroke="#fff" stroke-width="4"/>
+    </symbol>
+
+    <!-- パチンコ台 -->
+    <symbol id="slot" viewBox="0 0 200 200">
+      <rect x="10" y="10" width="180" height="180" fill="#3a3a4a" stroke="#1a1a1a" stroke-width="3"/>
+      <rect x="30" y="30" width="140" height="80" fill="#0a0a0a"/>
+      <text x="100" y="80" text-anchor="middle" font-size="40" fill="#ff3a3a" font-weight="900">BAD</text>
+      <circle cx="50" cy="140" r="15" fill="#ffeb3b"/>
+      <text x="50" y="146" text-anchor="middle" font-size="18" font-weight="900">7</text>
+      <circle cx="100" cy="140" r="15" fill="#ffeb3b"/>
+      <text x="100" y="146" text-anchor="middle" font-size="18" font-weight="900">7</text>
+      <circle cx="150" cy="140" r="15" fill="#e0e0e0"/>
+      <text x="150" y="146" text-anchor="middle" font-size="16" font-weight="900">BAR</text>
+      <rect x="160" y="160" width="16" height="28" fill="#b93a3a"/>
+    </symbol>
+
+    <!-- ドローン -->
+    <symbol id="drone" viewBox="0 0 80 60">
+      <rect x="30" y="25" width="20" height="12" fill="#3a3a3a" stroke="#1a1a1a" stroke-width="1"/>
+      <circle cx="15" cy="25" r="8" fill="#6a6a6a" opacity="0.5"/>
+      <circle cx="65" cy="25" r="8" fill="#6a6a6a" opacity="0.5"/>
+      <line x1="20" y1="28" x2="30" y2="30" stroke="#1a1a1a" stroke-width="2"/>
+      <line x1="50" y1="30" x2="60" y2="28" stroke="#1a1a1a" stroke-width="2"/>
+      <circle cx="40" cy="33" r="2" fill="#ff3a3a"/>
+    </symbol>
+  </defs>
+</svg>
+
+
+<!-- ==================================================================
+     第1話
+     ================================================================== -->
+<div class="episode-title">
+  <div class="number">EPISODE 1</div>
+  <div class="title">設定6は、鉱山に埋まっとった</div>
+</div>
+
+<div class="scene">シーン1　駅前パチンコ店「マルハン」夜10時</div>
+
+<!-- P1: 広いコマ（店内） -->
+<div class="page">
+  <div class="panel wide" style="min-height:260px;">
+    <div class="cap">1</div>
+    <div class="bg bg-pachinko"></div>
+    <div class="narration">都内某所。今日もスロッターたちの戦場は熱い――。</div>
+    <div class="sfx big rot-l" style="top:30%; left:15%;">ジャラジャラ</div>
+    <div class="sfx big rot-r" style="top:55%; right:10%;">ピコピコ</div>
+    <div class="sfx huge" style="top:20%; right:30%;">ガコン！</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- P2: どうじま絶望 -->
+  <div class="panel" style="min-height:280px;">
+    <div class="cap">2</div>
+    <div class="bg bg-pachinko" style="opacity:0.6"></div>
+    <div class="char center"><svg width="140" height="180"><use href="#dojima-sad"/></svg></div>
+    <div class="bubble mono tl">今日も……のまれた……</div>
+    <div class="sfx" style="top:60%; right:10%; font-size:28px; color:#2e4b8a;">シクシク</div>
+  </div>
+  <!-- P3: スロット台アップ -->
+  <div class="panel" style="min-height:280px;">
+    <div class="cap">3</div>
+    <div class="bg bg-night"></div>
+    <div class="char center" style="bottom:30px;"><svg width="180" height="180"><use href="#slot"/></svg></div>
+    <div class="sfx huge rot-l" style="top:30%; left:20%;">ハズレ</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- P4: 顔アップの絶叫 -->
+  <div class="panel wide face-zoom" style="min-height:260px;">
+    <div class="cap">4</div>
+    <div class="bg bg-concentration"></div>
+    <div class="char center" style="bottom:0;"><svg width="220" height="260"><use href="#dojima-sad"/></svg></div>
+    <div class="bubble shout tr" style="padding:16px 20px;">「設定6や」って<br>言ったのは誰や……！</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- P5: 店を出る -->
+  <div class="panel" style="min-height:240px;">
+    <div class="cap">5</div>
+    <div class="bg bg-night"></div>
+    <div class="char left"><svg width="130" height="170"><use href="#dojima-sad"/></svg></div>
+    <div class="bubble mono tr">今月の家計費……<br>使ってもうた……</div>
+    <div class="sfx" style="bottom:10px; right:10px; font-size:24px; color:#fff;">とぼとぼ……</div>
+  </div>
+  <!-- P6: みらいの記憶 -->
+  <div class="panel" style="min-height:240px;">
+    <div class="cap">6</div>
+    <div class="bg bg-tone" style="opacity:0.9"></div>
+    <div class="char center" style="bottom:20px;"><svg width="130" height="170"><use href="#mirai"/></svg></div>
+    <div class="bubble mono tl">みらい、ピアノ……<br>習わせてやりたかったのに……</div>
+    <div class="sfx" style="top:20px; right:20px; font-size:24px; color:#b93a3a;">♪ポロン</div>
+  </div>
+</div>
+
+<div class="scene">シーン2　怪しい男、現る</div>
+
+<div class="page">
+  <!-- P7: ベンチに座るどうじま -->
+  <div class="panel wide" style="min-height:280px;">
+    <div class="cap">7</div>
+    <div class="bg bg-night"></div>
+    <div class="char" style="left:20%; bottom:20px;"><svg width="140" height="180"><use href="#dojima-sad"/></svg></div>
+    <div class="char" style="right:20%; bottom:20px;"><svg width="140" height="180"><use href="#mystery"/></svg></div>
+    <div class="bubble tr" style="top:30px; right:5%;">兄ちゃん……<br>負けたんか？</div>
+    <div class="sfx" style="top:50%; left:5%; font-size:24px; color:#fff;">ビクッ</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- P8: 謎の男アップ -->
+  <div class="panel" style="min-height:280px;">
+    <div class="cap">8</div>
+    <div class="bg bg-night"></div>
+    <div class="char center" style="bottom:0;"><svg width="180" height="220"><use href="#mystery"/></svg></div>
+    <div class="bubble shout tl" style="padding:18px 20px; font-size:15px;">ホンマの設定6は――<br>別の場所に埋まっとる。</div>
+  </div>
+  <!-- P9: どうじま反応 -->
+  <div class="panel" style="min-height:280px;">
+    <div class="cap">9</div>
+    <div class="bg bg-flash"></div>
+    <div class="char center" style="bottom:0;"><svg width="200" height="240"><use href="#dojima-shock"/></svg></div>
+    <div class="sfx huge" style="top:30px; right:10px;">！？</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- P10: パンフレット + 鉱山の夢 -->
+  <div class="panel wide" style="min-height:240px;">
+    <div class="cap">10</div>
+    <div class="bg bg-sparkle"></div>
+    <div class="char left"><svg width="130" height="170"><use href="#mystery"/></svg></div>
+    <div style="position:absolute; right:15%; top:20%;"><svg width="90" height="90"><use href="#pickaxe"/></svg></div>
+    <div style="position:absolute; right:8%; top:45%;"><svg width="60" height="60"><use href="#gem"/></svg></div>
+    <div class="bubble tr" style="top:30px; right:20%; max-width:50%;">鉱山や。<br>つるはしがレバーや。<br>あんたの『引き』が、<br>そのまま金になる。</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- P11: 眉稲妻！決意の顔アップ -->
+  <div class="panel wide" style="min-height:320px;">
+    <div class="cap">11</div>
+    <div class="bg bg-concentration"></div>
+    <div class="char center" style="bottom:0;"><svg width="260" height="310"><use href="#dojima-fire"/></svg></div>
+    <div class="sfx mega gold" style="top:10px; left:10px; transform:rotate(-8deg);">ゴゴゴゴ</div>
+    <div class="bubble mono br">……設定判別が、<br>できるんか？</div>
+  </div>
+</div>
+
+<div class="scene">シーン3　帰宅、決意の土下座</div>
+
+<div class="page p-2col">
+  <!-- P12: 家のドア -->
+  <div class="panel" style="min-height:240px;">
+    <div class="cap">12</div>
+    <div class="bg bg-home"></div>
+    <div class="char center" style="bottom:0;"><svg width="140" height="180"><use href="#hanako"/></svg></div>
+    <div class="bubble shout tl" style="padding:12px; font-size:14px;">お父さん、また遅い〜！<br>またパチンコ〜！？</div>
+  </div>
+  <!-- P13: 土下座 -->
+  <div class="panel" style="min-height:240px;">
+    <div class="cap">13</div>
+    <div class="bg bg-home"></div>
+    <div style="position:absolute; bottom:20px; left:30%;">
+      <svg width="140" height="80" viewBox="0 0 140 80">
+        <!-- 土下座姿 -->
+        <ellipse cx="70" cy="70" rx="55" ry="10" fill="#3a3a4a"/>
+        <path d="M 35 40 Q 70 20 105 40 L 110 70 L 30 70 Z" fill="#3a3a4a"/>
+        <ellipse cx="70" cy="40" rx="20" ry="10" fill="#f4d0a0"/>
+        <!-- 眉 -->
+        <path d="M 55 38 Q 62 32 68 38" stroke="#1a1a1a" stroke-width="3" fill="none"/>
+        <path d="M 72 38 Q 78 32 85 38" stroke="#1a1a1a" stroke-width="3" fill="none"/>
+      </svg>
+    </div>
+    <div class="bubble shout tr" style="padding:14px; font-size:15px; max-width:55%;">家族を幸せにするために、<br>俺、掘る！！</div>
+    <div class="sfx" style="top:10px; left:10px; font-size:22px; color:#b93a3a;">バッ</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- P14: みらい笑顔 -->
+  <div class="panel" style="min-height:240px;">
+    <div class="cap">14</div>
+    <div class="bg bg-home"></div>
+    <div class="char center" style="bottom:10px;"><svg width="140" height="180"><use href="#mirai"/></svg></div>
+    <div class="bubble tl">お父さ〜ん、<br>がんばって〜！</div>
+    <div class="sfx" style="top:10px; right:10px; font-size:22px; color:#ff6b9d;">キラ☆</div>
+  </div>
+  <!-- P15: 花子ため息 -->
+  <div class="panel" style="min-height:240px;">
+    <div class="cap">15</div>
+    <div class="bg bg-home"></div>
+    <div class="char center" style="bottom:10px;"><svg width="140" height="180"><use href="#hanako"/></svg></div>
+    <div class="bubble tr">もう……<br>一回だけやで？</div>
+    <div class="sfx" style="top:10px; left:10px; font-size:20px; color:#5a3e7a;">はぁ……</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- P16: 決意のラスト -->
+  <div class="panel wide" style="min-height:340px;">
+    <div class="cap">16</div>
+    <div class="bg bg-sunset"></div>
+    <div class="char center" style="bottom:0;"><svg width="240" height="300"><use href="#dojima-fire"/></svg></div>
+    <div style="position:absolute; right:8%; top:15%;"><svg width="120" height="120"><use href="#pickaxe"/></svg></div>
+    <div class="bubble mono bl" style="bottom:30px; max-width:60%;">見ててくれ、花子、みらい。<br>今度こそ、当ててみせる！</div>
+    <div class="sfx huge gold" style="top:20px; left:10%;">キラーン☆</div>
+  </div>
+</div>
+
+<div class="end-mark">〜 第 1 話 ・ 完 〜</div>
+
+
+<!-- ==================================================================
+     第2話
+     ================================================================== -->
+<div class="episode-title">
+  <div class="number">EPISODE 2</div>
+  <div class="title">集え、一獲千金カンパニー</div>
+</div>
+
+<div class="scene">シーン1　鉱山エリア入口、朝</div>
+
+<div class="page">
+  <!-- 到着シーン -->
+  <div class="panel wide" style="min-height:280px;">
+    <div class="cap">1</div>
+    <div class="bg bg-sky"></div>
+    <div class="narration">翌朝、どうじまくんは男に教えられた鉱山エリアへ降り立った。</div>
+    <!-- 看板 -->
+    <div style="position:absolute; top:20px; right:10%;">
+      <svg width="200" height="80" viewBox="0 0 200 80">
+        <rect x="5" y="5" width="190" height="70" fill="#e8c080" stroke="#1a1a1a" stroke-width="3"/>
+        <text x="100" y="30" text-anchor="middle" font-size="16" font-weight="900">HORUN採掘</text>
+        <text x="100" y="55" text-anchor="middle" font-size="14">採掘者募集中！</text>
+      </svg>
+    </div>
+    <div class="char" style="left:20%; bottom:10px;"><svg width="150" height="190"><use href="#dojima-fire"/></svg></div>
+    <div style="position:absolute; left:32%; bottom:15%;"><svg width="60" height="90"><use href="#pickaxe"/></svg></div>
+    <div class="bubble shout bl" style="bottom:30px; left:4%; padding:12px; font-size:15px;">ここが……<br>俺の新しい戦場！</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- つるはし破壊 -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">2</div>
+    <div class="bg bg-sky"></div>
+    <div class="char center" style="bottom:10px;"><svg width="150" height="190"><use href="#horun"/></svg></div>
+    <div class="bubble shout tr" style="padding:12px; font-size:14px;">そのつるはしで<br>掘る気か！？</div>
+  </div>
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">3</div>
+    <div class="bg bg-speed"></div>
+    <div class="char center" style="bottom:10px;"><svg width="150" height="190"><use href="#dojima-shock"/></svg></div>
+    <div class="sfx huge" style="top:20px; right:10px;">ガーン</div>
+    <div class="bubble mono bl">……やっぱり。</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- ほるん社長に誘われる -->
+  <div class="panel wide" style="min-height:280px;">
+    <div class="cap">4</div>
+    <div class="bg bg-sky"></div>
+    <div class="char" style="left:15%; bottom:10px;"><svg width="150" height="190"><use href="#horun"/></svg></div>
+    <div class="char" style="right:15%; bottom:10px;"><svg width="140" height="180"><use href="#dojima"/></svg></div>
+    <div class="bubble tl" style="top:20px; left:10%; max-width:40%;">ワシが面倒みたる。<br>ちょうど仲間集めとったんや。<br>一緒に来い、世界を変えるで。</div>
+    <div class="sfx" style="bottom:20px; left:45%; font-size:24px; color:#b8860b;">ガシッ</div>
+  </div>
+</div>
+
+<div class="scene">シーン2　仲間との顔合わせ</div>
+
+<div class="page p-3col">
+  <!-- はるきち登場 -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">5</div>
+    <div class="bg bg-office"></div>
+    <div class="char center" style="bottom:10px;"><svg width="130" height="190"><use href="#harukichi"/></svg></div>
+    <div class="bubble tl" style="font-size:12px; padding:8px;">はるきちで〜す！<br>大阪から来たで〜！</div>
+    <div class="sfx" style="top:10px; right:10px; font-size:24px; color:#ff6b9d;">✌</div>
+  </div>
+  <!-- 眉毛爆笑 -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">6</div>
+    <div class="bg bg-concentration"></div>
+    <div class="char center" style="bottom:0;"><svg width="160" height="220"><use href="#dojima"/></svg></div>
+    <div class="bubble shout tr" style="padding:10px; font-size:13px;">その眉毛で<br>占い師<br>できるで！！</div>
+  </div>
+  <!-- いんぐちゃん登場 -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">7</div>
+    <div class="bg bg-office"></div>
+    <div class="char center" style="bottom:10px;"><svg width="130" height="190"><use href="#ing"/></svg></div>
+    <div class="bubble tr" style="font-size:12px; padding:8px;">……よろしく。</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- 命名シーン -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">8</div>
+    <div class="bg bg-office"></div>
+    <div class="char left"><svg width="120" height="170"><use href="#harukichi"/></svg></div>
+    <div class="char right"><svg width="120" height="170"><use href="#ing"/></svg></div>
+    <div class="bubble shout tl" style="padding:10px; font-size:13px; max-width:45%;">『いんぐちゃん』<br>でええやんな？</div>
+    <div class="bubble tr" style="font-size:12px; padding:6px 10px; max-width:40%;">……違う。</div>
+  </div>
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">9</div>
+    <div class="bg bg-office"></div>
+    <div class="char center"><svg width="140" height="190"><use href="#ing"/></svg></div>
+    <div class="bubble mono tl">（諦めた顔）……ん。</div>
+    <div class="sfx" style="bottom:30px; right:30px; font-size:24px; color:#888;">ぐぬぬ……</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- 結成ポーズ -->
+  <div class="panel wide" style="min-height:320px;">
+    <div class="cap">10</div>
+    <div class="bg bg-sunset"></div>
+    <div class="char" style="left:8%; bottom:10px;"><svg width="130" height="180"><use href="#horun"/></svg></div>
+    <div class="char" style="left:30%; bottom:10px;"><svg width="130" height="180"><use href="#dojima-fire"/></svg></div>
+    <div class="char" style="left:52%; bottom:10px;"><svg width="120" height="180"><use href="#harukichi"/></svg></div>
+    <div class="char" style="left:74%; bottom:10px;"><svg width="120" height="180"><use href="#ing"/></svg></div>
+    <div class="bubble shout tl" style="padding:14px; font-size:16px; max-width:70%;">今日から君らは――<br>『一獲千金カンパニー』や！！</div>
+    <div class="sfx mega gold" style="top:10px; right:10px; transform:rotate(8deg);">結成ッ</div>
+  </div>
+</div>
+
+<div class="scene">シーン3　初採掘</div>
+
+<div class="page p-2col">
+  <!-- いんぐとほるん、どっち？ -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">11</div>
+    <div class="bg bg-mine"></div>
+    <div class="char center" style="bottom:10px;"><svg width="150" height="200"><use href="#ing"/></svg></div>
+    <div class="bubble tr" style="font-size:12px; padding:8px;">……この辺、<br>反応あり。確率73%。</div>
+  </div>
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">12</div>
+    <div class="bg bg-mine"></div>
+    <div class="char center" style="bottom:10px;"><svg width="150" height="200"><use href="#horun"/></svg></div>
+    <div class="bubble shout tl" style="padding:10px; font-size:14px;">ワシの勘は<br>こっちや！</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- はるきちツッコミ -->
+  <div class="panel wide" style="min-height:220px;">
+    <div class="cap">13</div>
+    <div class="bg bg-speed"></div>
+    <div class="char center" style="bottom:0;"><svg width="160" height="210"><use href="#harukichi"/></svg></div>
+    <div class="bubble shout tl" style="padding:14px; font-size:18px;">どっちやねん！！</div>
+    <div class="sfx mega" style="top:20px; right:5%; transform:rotate(12deg);">バシィ</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- 採掘 -->
+  <div class="panel wide" style="min-height:280px;">
+    <div class="cap">14</div>
+    <div class="bg bg-mine"></div>
+    <div class="char center" style="bottom:0;"><svg width="180" height="230"><use href="#dojima-fire"/></svg></div>
+    <div style="position:absolute; right:20%; top:20%;"><svg width="100" height="100"><use href="#pickaxe"/></svg></div>
+    <div class="bubble shout tl" style="padding:12px; font-size:14px;">とにかく……掘る！</div>
+    <div class="sfx huge dark" style="top:30px; right:5%; transform:rotate(-10deg);">ガツッ</div>
+    <div class="sfx huge dark" style="bottom:40px; left:5%; transform:rotate(8deg);">ガツッ</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- 初成果！ -->
+  <div class="panel wide" style="min-height:340px;">
+    <div class="cap">15</div>
+    <div class="bg bg-flash"></div>
+    <div class="char" style="left:5%; bottom:10px;"><svg width="110" height="160"><use href="#horun"/></svg></div>
+    <div class="char" style="left:28%; bottom:10px;"><svg width="110" height="160"><use href="#dojima-shock"/></svg></div>
+    <div class="char" style="left:51%; bottom:10px;"><svg width="110" height="160"><use href="#harukichi"/></svg></div>
+    <div class="char" style="left:74%; bottom:10px;"><svg width="110" height="160"><use href="#ing"/></svg></div>
+    <div style="position:absolute; top:20%; left:45%; transform:translateX(-50%);"><svg width="80" height="80"><use href="#gem"/></svg></div>
+    <div class="sfx mega gold" style="top:10px; left:5%; transform:rotate(-8deg);">キラッ</div>
+    <div class="bubble shout tr" style="padding:10px; font-size:14px; max-width:40%;">出たーーー！！</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- 涙するどうじま -->
+  <div class="panel wide" style="min-height:280px;">
+    <div class="cap">16</div>
+    <div class="bg bg-sunset"></div>
+    <div class="char center" style="bottom:0;"><svg width="220" height="280"><use href="#dojima-sad"/></svg></div>
+    <div class="bubble mono bl" style="bottom:30px; max-width:60%;">花子……みらい……<br>パパ、今日から本気やで。</div>
+  </div>
+</div>
+
+<div class="end-mark">〜 第 2 話 ・ 完 〜</div>
+
+
+<!-- ==================================================================
+     第3話
+     ================================================================== -->
+<div class="episode-title">
+  <div class="number">EPISODE 3</div>
+  <div class="title">金のつるはしと、白いスーツ</div>
+</div>
+
+<div class="scene">シーン1　一週間後</div>
+
+<div class="page p-2col">
+  <!-- どうじま採掘 -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">1</div>
+    <div class="bg bg-mine"></div>
+    <div class="char center" style="bottom:10px;"><svg width="140" height="190"><use href="#dojima-fire"/></svg></div>
+    <div style="position:absolute; right:20%; top:20%;"><svg width="90" height="90"><use href="#pickaxe"/></svg></div>
+    <div class="bubble tl">今日もいくで〜！</div>
+    <div class="sfx big dark" style="top:30px; right:10px;">カンカン</div>
+  </div>
+  <!-- いんぐちゃんプリン -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">2</div>
+    <div class="bg bg-office"></div>
+    <div class="char center" style="bottom:10px;"><svg width="140" height="190"><use href="#ing"/></svg></div>
+    <!-- プリン -->
+    <div style="position:absolute; right:15%; top:25%;">
+      <svg width="50" height="50" viewBox="0 0 50 50">
+        <path d="M 10 20 L 40 20 L 38 40 L 12 40 Z" fill="#ffdb99"/>
+        <ellipse cx="25" cy="20" rx="15" ry="4" fill="#c9944a"/>
+        <ellipse cx="25" cy="18" rx="10" ry="2" fill="#8b5a2b"/>
+      </svg>
+    </div>
+    <div class="bubble mono tl">……糖分、補給。</div>
+    <div class="bubble shout tr" style="padding:8px; font-size:11px; max-width:40%;">また食べてる！</div>
+  </div>
+</div>
+
+<div class="scene">シーン2　白いスーツの闖入者</div>
+
+<div class="page">
+  <!-- リムジン到着 -->
+  <div class="panel wide" style="min-height:240px;">
+    <div class="cap">3</div>
+    <div class="bg bg-sky"></div>
+    <div class="narration">そこへ、突然の訪問者――。</div>
+    <!-- リムジン -->
+    <div style="position:absolute; bottom:20px; left:5%;">
+      <svg width="400" height="100" viewBox="0 0 400 100">
+        <rect x="20" y="30" width="360" height="50" fill="#0a0a0a" rx="6"/>
+        <rect x="40" y="38" width="60" height="28" fill="#4a4a6a"/>
+        <rect x="110" y="38" width="60" height="28" fill="#4a4a6a"/>
+        <rect x="180" y="38" width="60" height="28" fill="#4a4a6a"/>
+        <rect x="250" y="38" width="60" height="28" fill="#4a4a6a"/>
+        <rect x="320" y="38" width="40" height="28" fill="#4a4a6a"/>
+        <circle cx="80" cy="85" r="14" fill="#3a3a3a" stroke="#c0c0c0" stroke-width="2"/>
+        <circle cx="320" cy="85" r="14" fill="#3a3a3a" stroke="#c0c0c0" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="sfx big" style="top:10px; right:15%;">キィィ……</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- マキシー登場ドン！ -->
+  <div class="panel wide" style="min-height:360px;">
+    <div class="cap">4</div>
+    <div class="bg bg-sparkle"></div>
+    <div class="char center" style="bottom:0;"><svg width="220" height="300"><use href="#maxie"/></svg></div>
+    <div style="position:absolute; right:15%; bottom:30%;"><svg width="90" height="90"><use href="#goldpick"/></svg></div>
+    <!-- シャンパングラス -->
+    <div style="position:absolute; left:15%; bottom:40%;">
+      <svg width="50" height="80" viewBox="0 0 50 80">
+        <path d="M 15 10 L 35 10 L 30 30 L 20 30 Z" fill="#ffeb99" opacity="0.8" stroke="#1a1a1a" stroke-width="1"/>
+        <rect x="24" y="30" width="2" height="30" fill="#1a1a1a"/>
+        <ellipse cx="25" cy="62" rx="10" ry="3" fill="#1a1a1a"/>
+        <circle cx="20" cy="15" r="1.5" fill="#fff"/>
+        <circle cx="28" cy="18" r="1" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="bubble tr" style="top:20px; right:10%; max-width:50%;">へ〜い、ここが噂の、<br>ちっちゃい鉱山か〜。<br>僕が買収したるわ〜。</div>
+    <div class="sfx mega gold" style="top:30%; left:5%; transform:rotate(-10deg);">ドーン</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- はるきちの鋭いツッコミ -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">5</div>
+    <div class="bg bg-speed"></div>
+    <div class="char center" style="bottom:10px;"><svg width="140" height="190"><use href="#harukichi"/></svg></div>
+    <div class="bubble shout tr" style="padding:10px; font-size:13px;">で、そのあと<br>サ終したやつやろ？</div>
+    <div class="sfx" style="top:10px; left:10px; font-size:28px; color:#b93a3a;">ズバッ</div>
+  </div>
+  <!-- マキシー、眉毛いじり -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">6</div>
+    <div class="bg bg-white"></div>
+    <div class="char center" style="bottom:10px;"><svg width="140" height="190"><use href="#maxie"/></svg></div>
+    <div class="bubble tl">その眉毛、ウケる〜！<br>SNSにあげるわ〜。</div>
+    <div class="sfx" style="bottom:20px; right:10px; font-size:20px; color:#888;">📸パシャ</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- どうじま、静かにキメる -->
+  <div class="panel wide" style="min-height:340px;">
+    <div class="cap">7</div>
+    <div class="bg bg-concentration"></div>
+    <div class="char center" style="bottom:0;"><svg width="220" height="290"><use href="#dojima-fire"/></svg></div>
+    <div class="bubble shout tl" style="padding:14px; font-size:15px; max-width:55%;">毎晩シャンパン飲む金より、<br>家族と飲む缶ビールのほうが、<br>うまいんや。</div>
+    <div class="sfx big" style="top:10px; right:5%; color:#1f3a68; transform:rotate(-5deg);">スッ……</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- マキシーの動揺 -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">8</div>
+    <div class="bg bg-white"></div>
+    <div class="char center" style="bottom:0;"><svg width="180" height="240"><use href="#maxie"/></svg></div>
+    <div class="bubble mono tr">…………。</div>
+    <div class="sfx" style="bottom:30px; left:20px; font-size:20px; color:#888;">ピクッ</div>
+  </div>
+  <!-- 勝負決定 -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">9</div>
+    <div class="bg bg-speed"></div>
+    <div class="char center" style="bottom:10px;"><svg width="150" height="200"><use href="#maxie"/></svg></div>
+    <div class="bubble shout tl" style="padding:10px; font-size:13px;">勝負しよか。<br>採掘量、多いほうが<br>鉱山の権利もらう。</div>
+  </div>
+</div>
+
+<div class="scene">シーン3　採掘バトル</div>
+
+<div class="page p-2col">
+  <!-- ドローン軍団 -->
+  <div class="panel" style="min-height:280px;">
+    <div class="cap">10</div>
+    <div class="bg bg-mine"></div>
+    <div style="position:absolute; top:20%; left:15%;"><svg width="70" height="52"><use href="#drone"/></svg></div>
+    <div style="position:absolute; top:15%; right:20%;"><svg width="70" height="52"><use href="#drone"/></svg></div>
+    <div style="position:absolute; top:45%; left:30%;"><svg width="60" height="45"><use href="#drone"/></svg></div>
+    <div style="position:absolute; top:55%; right:10%;"><svg width="60" height="45"><use href="#drone"/></svg></div>
+    <div class="char center" style="bottom:0;"><svg width="120" height="160"><use href="#maxie"/></svg></div>
+    <div class="sfx big" style="top:5%; left:5%;">ヴヴヴ……</div>
+  </div>
+  <!-- 手掘り４人 -->
+  <div class="panel" style="min-height:280px;">
+    <div class="cap">11</div>
+    <div class="bg bg-mine"></div>
+    <div class="char" style="left:5%; bottom:10px;"><svg width="90" height="140"><use href="#horun"/></svg></div>
+    <div class="char" style="left:27%; bottom:10px;"><svg width="90" height="140"><use href="#dojima-fire"/></svg></div>
+    <div class="char" style="left:49%; bottom:10px;"><svg width="90" height="140"><use href="#harukichi"/></svg></div>
+    <div class="char" style="left:71%; bottom:10px;"><svg width="90" height="140"><use href="#ing"/></svg></div>
+    <div class="sfx big dark" style="top:10%; left:20%;">ガツ</div>
+    <div class="sfx big dark" style="top:15%; right:25%;">ガツ</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- 集中するどうじま -->
+  <div class="panel wide" style="min-height:300px;">
+    <div class="cap">12</div>
+    <div class="bg bg-concentration"></div>
+    <div class="char center" style="bottom:0;"><svg width="220" height="280"><use href="#dojima-fire"/></svg></div>
+    <div style="position:absolute; right:15%; top:15%;"><svg width="120" height="120"><use href="#pickaxe"/></svg></div>
+    <div class="bubble mono tl" style="max-width:40%;">花子……みらい……<br>パパ、負けへんで……</div>
+    <div class="sfx huge" style="top:30%; right:5%; transform:rotate(15deg);">グググ</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- 衝撃！ -->
+  <div class="panel wide" style="min-height:280px;">
+    <div class="cap">13</div>
+    <div class="bg bg-flash"></div>
+    <div class="sfx mega gold" style="top:20%; left:50%; transform:translateX(-50%) rotate(-5deg); font-size:120px;">ガツン！！</div>
+    <div class="sfx big dark" style="bottom:20px; left:10%;">ビリビリッ</div>
+    <div class="sfx big dark" style="bottom:30px; right:10%;">ビリビリッ</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- 巨大ダイヤ発掘！ 眉毛が画面からはみ出る -->
+  <div class="panel wide" style="min-height:420px;">
+    <div class="cap">14</div>
+    <div class="bg bg-sparkle"></div>
+    <!-- 眉毛全画面展開 -->
+    <svg width="100%" height="100%" viewBox="0 0 900 420" preserveAspectRatio="none" style="position:absolute; inset:0; z-index:1;">
+      <path d="M 0 180 Q 200 100 450 180 L 450 240 Q 200 160 0 240 Z" fill="#1a1a1a" opacity="0.85"/>
+      <path d="M 450 180 Q 700 100 900 180 L 900 240 Q 700 160 450 240 Z" fill="#1a1a1a" opacity="0.85"/>
+    </svg>
+    <div style="position:absolute; top:35%; left:50%; transform:translateX(-50%); z-index:2;"><svg width="160" height="160"><use href="#bigdia"/></svg></div>
+    <div class="bubble shout" style="top:20px; left:50%; transform:translateX(-50%); padding:16px 24px; font-size:20px; z-index:5;">で、出たーーーー！！</div>
+    <div class="sfx mega gold" style="bottom:20px; left:5%; z-index:5; font-size:80px;">ドォォン</div>
+    <div class="sfx mega gold" style="bottom:20px; right:5%; z-index:5; font-size:80px;">キラァァ</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- マキシー舌打ち -->
+  <div class="panel" style="min-height:240px;">
+    <div class="cap">15</div>
+    <div class="bg bg-mine"></div>
+    <div class="char center" style="bottom:0;"><svg width="150" height="200"><use href="#maxie"/></svg></div>
+    <div class="bubble mono tr">チッ……<br>ビギナーズラックや。</div>
+    <div class="sfx" style="top:20px; left:10px; font-size:22px; color:#fff;">（くやしい）</div>
+  </div>
+  <div class="panel" style="min-height:240px;">
+    <div class="cap">16</div>
+    <div class="bg bg-mine"></div>
+    <div class="char center" style="bottom:0;"><svg width="150" height="200"><use href="#maxie"/></svg></div>
+    <div class="bubble mono bl">……また来るで。<br>次は、負けへん。</div>
+    <div class="sfx big" style="top:20px; right:10px; color:#fff;">スタスタ</div>
+  </div>
+</div>
+
+<div class="scene">シーン4　家に帰る道</div>
+
+<div class="page">
+  <!-- 家に帰る -->
+  <div class="panel wide" style="min-height:260px;">
+    <div class="cap">17</div>
+    <div class="bg bg-home"></div>
+    <div class="char" style="left:15%; bottom:10px;"><svg width="130" height="180"><use href="#dojima"/></svg></div>
+    <div class="char" style="left:42%; bottom:10px;"><svg width="130" height="180"><use href="#hanako"/></svg></div>
+    <div class="char" style="left:68%; bottom:10px;"><svg width="110" height="160"><use href="#mirai"/></svg></div>
+    <div class="bubble tl" style="max-width:30%;">ただいま〜！</div>
+    <div class="sfx" style="top:20px; right:30%; font-size:20px; color:#ff6b9d;">おかえり♪</div>
+  </div>
+</div>
+
+<div class="page p-2col">
+  <!-- 宝石をみせる -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">18</div>
+    <div class="bg bg-sparkle"></div>
+    <div style="position:absolute; top:20%; left:50%; transform:translateX(-50%);"><svg width="80" height="80"><use href="#gem"/></svg></div>
+    <div class="bubble mono bl" style="max-width:70%;">花子、みらい……<br>見てくれ、今日の成果や。</div>
+    <div class="sfx big gold" style="top:5%; right:10%;">☆</div>
+  </div>
+  <!-- みらい喜ぶ -->
+  <div class="panel" style="min-height:260px;">
+    <div class="cap">19</div>
+    <div class="bg bg-home"></div>
+    <div class="char center" style="bottom:10px;"><svg width="140" height="200"><use href="#mirai"/></svg></div>
+    <div class="bubble shout tl" style="padding:10px; font-size:14px;">お父さん、<br>すごい！</div>
+    <div class="sfx big" style="top:10px; right:10px; color:#ff6b9d;">キラキラ</div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- エンディング -->
+  <div class="panel wide" style="min-height:340px;">
+    <div class="cap">20</div>
+    <div class="bg bg-sunset"></div>
+    <div class="char" style="left:12%; bottom:10px;"><svg width="130" height="180"><use href="#hanako"/></svg></div>
+    <div class="char" style="left:38%; bottom:10px;"><svg width="130" height="180"><use href="#dojima"/></svg></div>
+    <div class="char" style="left:64%; bottom:10px;"><svg width="110" height="160"><use href="#mirai"/></svg></div>
+    <div class="bubble mono bl" style="bottom:30px; max-width:55%;">今日、初めて――<br>『当ててよかった』って、<br>思えた。</div>
+    <!-- 星 -->
+    <div class="sfx" style="top:10px; left:10%; font-size:24px; color:#fff;">☆</div>
+    <div class="sfx" style="top:20px; left:40%; font-size:30px; color:#fff;">☆</div>
+    <div class="sfx" style="top:15px; left:70%; font-size:26px; color:#fff;">☆</div>
+  </div>
+</div>
+
+<div class="end-mark">〜 第 3 話 ・ 完 〜</div>
+
+<div style="text-align:center; color:#888; padding:40px; font-size:18px; font-weight:900; letter-spacing:4px;">
+  To be continued...
+</div>
+
+</div><!-- /book -->
+
+</body>
+</html>
