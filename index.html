@@ -4633,6 +4633,16 @@
     <div class="game-main">
       <!-- 左サイド -->
       <div class="side">
+        <!-- 🏢 会社ランクパネル（主人公アバターの上に表示・モード別） -->
+        <div id="side-company-rank" style="display:block; background:linear-gradient(135deg,#1a1a2e,#2a2a4a); border:2px solid #ffd700; border-radius:8px; padding:7px 9px; margin:0 0 4px 0; color:#fff; font-weight:900; box-shadow:0 2px 0 rgba(0,0,0,0.5), inset 0 0 10px rgba(255,215,0,0.18);">
+          <div style="font-size:8px; letter-spacing:1.5px; color:#ffd700; opacity:0.9; margin-bottom:2px; text-align:center;">🏢 COMPANY</div>
+          <div id="side-company-rank-inner" style="display:flex; align-items:center; gap:6px;">
+            <div style="flex:1; min-width:0; text-align:center;">
+              <div id="side-company-name" style="font-size:11px; line-height:1.2; color:#fff;">HORUN採掘</div>
+              <div id="side-company-sub" style="font-size:9px; color:#ffd700; margin-top:2px; line-height:1.2;">読み込み中...</div>
+            </div>
+          </div>
+        </div>
         <div class="char-box">
           <div class="name" id="char-player-name">堂島 太郎</div>
           <div id="char-company-status" style="font-size:9px; font-weight:900; color:#fff; background:#1f3a68; padding:2px 4px; margin:2px 0; letter-spacing:1px;">🏢 HORUN採掘 社員</div>
@@ -4646,16 +4656,6 @@
         <div class="char-box mini personal-only" id="char-harukichi">
           <svg width="36" height="48"><use href="#harukichi"/></svg>
           <div class="info"><div class="name">はるきち</div><div id="harukichi-msg">いっとこ〜！</div></div>
-        </div>
-        <!-- 🏢 会社ランクパネル（いんぐちゃんの上に表示・モード別） -->
-        <div id="side-company-rank" style="display:block; background:linear-gradient(135deg,#1a1a2e,#2a2a4a); border:2px solid #ffd700; border-radius:8px; padding:7px 9px; margin:2px 0 6px 0; color:#fff; font-weight:900; box-shadow:0 2px 0 rgba(0,0,0,0.5), inset 0 0 8px rgba(255,215,0,0.15);">
-          <div style="font-size:8px; letter-spacing:1.5px; color:#ffd700; opacity:0.9; margin-bottom:2px;">🏢 COMPANY</div>
-          <div id="side-company-rank-inner" style="display:flex; align-items:center; gap:6px;">
-            <div style="flex:1; min-width:0;">
-              <div id="side-company-name" style="font-size:11px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff;">HORUN採掘</div>
-              <div id="side-company-sub" style="font-size:9px; color:#ffd700; margin-top:1px;">読み込み中...</div>
-            </div>
-          </div>
         </div>
         <div class="char-box mini personal-only" id="char-ing">
           <svg width="36" height="48"><use href="#ing"/></svg>
