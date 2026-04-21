@@ -4573,9 +4573,8 @@
     </div>
     <!-- トップHUD：つるはし / 日付 / USDT / ROND / DJM / 🐻ウォレット / 🔊音量 -->
     <div class="hud" style="grid-template-columns: auto 220px auto 120px auto auto auto auto auto;">
-      <div class="label" id="pick-label">
-        <svg width="18" height="18" style="vertical-align:middle" id="pick-icon"><use href="#pickaxe-mid"/></svg>
-        つるはし
+      <div class="label" id="pick-label" title="つるはし">
+        <svg width="20" height="20" style="vertical-align:middle" id="pick-icon"><use href="#pickaxe-mid"/></svg>
       </div>
       <!-- 耐久度ゲージ -->
       <div class="hud-dura" id="hud-dura">
@@ -4607,14 +4606,25 @@
     <div class="game-main">
       <!-- 左サイド -->
       <div class="side">
-        <!-- 🎯 ミッションヒント -->
-        <div id="hud-mission-hint" style="background:linear-gradient(90deg,#3a7a4a,#5a3e7a,#5a3e7a,#3a7a4a); border:2px solid #ffd700; border-radius:6px; padding:5px 8px; color:#fff; font-weight:900; font-size:11px; text-align:center; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
-          🎯 <span id="hud-mission-text">採掘で稼ごう</span>
-        </div>
-
-        <!-- 📡 ニュースティッカー（LIVE市場＋世界ニュース） -->
-        <div class="news-ticker" style="margin-bottom:0; border-radius:6px; border-width:2px;">
-          <div class="ticker-content" id="news-ticker-content">読み込み中…</div>
+        <!-- 📡 ティッカー群（NEWS / MISSION / MARKET） -->
+        <div style="display:flex; flex-direction:column; gap:3px; border-radius:6px; overflow:hidden; border:2px solid #1a1a1a; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
+          <!-- 📰 NEWS ティッカー -->
+          <div class="ticker-row" style="background:linear-gradient(90deg,#1a1a1a,#3a1a1a,#1a1a1a); color:#ffd700; overflow:hidden; height:22px; position:relative;">
+            <div class="ticker-label" style="background:#b93a3a; color:#fff; position:absolute; left:0; top:0; bottom:0; padding:0 8px; display:flex; align-items:center; font-size:9px; font-weight:900; letter-spacing:1px; z-index:2;">📰 NEWS</div>
+            <div class="ticker-content" id="news-ticker-content" style="display:inline-block; white-space:nowrap; padding-left:75px; animation:tickerScroll 60s linear infinite; font-size:11px; font-weight:900; line-height:22px;">読み込み中…</div>
+          </div>
+          <!-- 🎯 MISSION ティッカー -->
+          <div class="ticker-row" style="background:linear-gradient(90deg,#1a1a2e,#3a2a5a,#1a1a2e); color:#ffd700; overflow:hidden; height:22px; position:relative;">
+            <div class="ticker-label" style="background:#5a3e7a; color:#fff; position:absolute; left:0; top:0; bottom:0; padding:0 8px; display:flex; align-items:center; font-size:9px; font-weight:900; letter-spacing:1px; z-index:2;">🎯 MISSION</div>
+            <div id="hud-mission-hint" style="display:inline-block; white-space:nowrap; padding-left:85px; animation:tickerScroll 45s linear infinite; font-size:11px; font-weight:900; line-height:22px; color:#fff;">
+              <span id="hud-mission-text">採掘で稼ごう</span>
+            </div>
+          </div>
+          <!-- 📊 MARKET ティッカー -->
+          <div class="ticker-row" style="background:linear-gradient(90deg,#1a2a1a,#2a3a2a,#1a2a1a); color:#7ae890; overflow:hidden; height:22px; position:relative;">
+            <div class="ticker-label" style="background:#3a7a4a; color:#fff; position:absolute; left:0; top:0; bottom:0; padding:0 8px; display:flex; align-items:center; font-size:9px; font-weight:900; letter-spacing:1px; z-index:2;">📊 MARKET</div>
+            <div id="market-ticker-content" style="display:inline-block; white-space:nowrap; padding-left:85px; animation:tickerScroll 30s linear infinite; font-size:11px; font-weight:900; line-height:22px;">価格取得中…</div>
+          </div>
         </div>
 
         <!-- 🏢 会社パネル：ランク・オフィス・個人財布・会社ウォレットボタン -->
@@ -13029,6 +13039,24 @@ function updateMiniTicker() {
         <span style="color:#ffd700; margin-left:6px;">D:$${binance.djmPrice.toFixed(5)}</span>
         <span style="color:${dColor};">${dArrow}${Math.abs(djmCh).toFixed(1)}%</span>
       </span>`;
+  }
+  // 📊 MARKET ティッカー（スクロール式・3取引所分の価格差を表示）
+  const mkEl = document.getElementById('market-ticker-content');
+  if (mkEl && state.markets) {
+    const parts = [];
+    ['binance', 'bybit', 'bitget'].forEach(exName => {
+      const ex = state.markets[exName];
+      if (!ex) return;
+      const rCh = ((ex.rondPrice / ex.rondHist[0]) - 1) * 100;
+      const dCh = ((ex.djmPrice / ex.djmHist[0]) - 1) * 100;
+      const rArr = rCh >= 0 ? '▲' : '▼';
+      const dArr = dCh >= 0 ? '▲' : '▼';
+      const rCol = rCh >= 0 ? '#7ae890' : '#ff6060';
+      const dCol = dCh >= 0 ? '#7ae890' : '#ff6060';
+      const short = exName.charAt(0).toUpperCase() + exName.slice(1);
+      parts.push(`<span style="color:#ffd700;">【${short}】</span> <span style="color:#a080ff;">R:$${ex.rondPrice.toFixed(5)}</span> <span style="color:${rCol};">${rArr}${Math.abs(rCh).toFixed(1)}%</span>  <span style="color:#ffd700;">D:$${ex.djmPrice.toFixed(5)}</span> <span style="color:${dCol};">${dArr}${Math.abs(dCh).toFixed(1)}%</span>`);
+    });
+    mkEl.innerHTML = parts.join('&nbsp;&nbsp;｜&nbsp;&nbsp;');
   }
   // 個人ウォレット
   const pEl = document.getElementById('hud-personal-usdt');
