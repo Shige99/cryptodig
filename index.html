@@ -4633,23 +4633,26 @@
     <div class="game-main">
       <!-- 左サイド -->
       <div class="side">
-        <!-- 🏢 会社ランク×主人公アバター：一体型ビジネスカード -->
-        <div class="char-box" style="padding:0; overflow:hidden; border:3px solid #1a1a1a;">
-          <!-- 会社ランクリボン（カード上部・金色の名刺ヘッダー） -->
-          <div id="side-company-rank" style="background:linear-gradient(135deg,#b8860b 0%, #ffd700 50%, #b8860b 100%); padding:5px 8px 6px 8px; border-bottom:2px solid #1a1a1a; text-align:center;">
-            <div style="font-size:7px; letter-spacing:2.5px; color:#1a1a1a; font-weight:900; opacity:0.75; margin-bottom:1px;">◆ COMPANY ◆</div>
-            <div id="side-company-rank-inner">
-              <div id="side-company-name" style="font-size:11px; line-height:1.15; color:#1a1a1a; font-weight:900; text-shadow:0 1px 0 rgba(255,255,255,0.3);">HORUN採掘</div>
-              <div id="side-company-sub" style="font-size:8.5px; color:#3a2a0a; margin-top:1px; line-height:1.2; font-weight:700;">読み込み中...</div>
+        <!-- 🏢 ビジネスカード：ダーク基調・会社情報＋主人公の統合カード -->
+        <div class="char-box" style="padding:0; overflow:hidden; border:3px solid #ffd700; background:#0d0d18; box-shadow:0 4px 0 #000, inset 0 0 12px rgba(255,215,0,0.08);">
+          <!-- 会社ヘッダー（金リボン） -->
+          <div id="side-company-rank" style="background:linear-gradient(180deg,#ffd700 0%, #d4a300 100%); padding:6px 8px 7px 8px; border-bottom:3px double #1a1a1a; text-align:center; position:relative;">
+            <div style="font-size:7px; letter-spacing:3px; color:#1a1a1a; font-weight:900; opacity:0.8;">— COMPANY ID —</div>
+            <div id="side-company-rank-inner" style="margin-top:2px;">
+              <div id="side-company-name" style="font-size:12px; line-height:1.15; color:#1a1a1a; font-weight:900;">HORUN採掘</div>
+              <div id="side-company-sub" style="font-size:9px; color:#3a2a0a; margin-top:2px; line-height:1.2; font-weight:800;">読み込み中...</div>
             </div>
           </div>
-          <!-- 主人公本体 -->
-          <div style="padding:4px; text-align:center;">
-            <div class="name" id="char-player-name">堂島 太郎</div>
-            <!-- 旧会社ステータス：上のゴールドリボンに統合したので非表示 -->
-            <div id="char-company-status" style="display:none; font-size:9px; font-weight:900; color:#fff; background:#1f3a68; padding:2px 4px; margin:2px 0; letter-spacing:1px;">🏢 HORUN採掘 社員</div>
-            <svg width="70" height="100" id="char-portrait"><use href="#dojima" id="portrait-use"/></svg>
-            <div id="char-avatar-overlay" style="display:none; margin-top:-100px; position:relative; pointer-events:none;"></div>
+          <!-- 主人公本体（ダーク背景でアバターを引き立てる） -->
+          <div style="padding:8px 4px 6px 4px; text-align:center; background:radial-gradient(circle at 50% 0%, #1a2a4a 0%, #0d0d18 70%);">
+            <svg width="78" height="108" id="char-portrait" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));"><use href="#dojima" id="portrait-use"/></svg>
+            <div id="char-avatar-overlay" style="display:none; margin-top:-108px; position:relative; pointer-events:none;"></div>
+            <!-- 主人公名（カード下部のネームプレート） -->
+            <div style="margin-top:4px; padding:3px 6px; background:linear-gradient(90deg, transparent, rgba(255,215,0,0.15), transparent); border-top:1px solid rgba(255,215,0,0.4); border-bottom:1px solid rgba(255,215,0,0.4);">
+              <div class="name" id="char-player-name" style="color:#ffd700; font-size:13px; font-weight:900; letter-spacing:1px; text-shadow:0 1px 2px rgba(0,0,0,0.8); margin:0; padding:0;">堂島 太郎</div>
+            </div>
+            <!-- 旧会社ステータス：上の金リボンに統合したので非表示 -->
+            <div id="char-company-status" style="display:none;"></div>
           </div>
         </div>
         <div class="char-box mini personal-only" id="char-horun">
