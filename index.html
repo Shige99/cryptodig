@@ -1930,15 +1930,16 @@
     gap: 6px;
     align-items: center;
     max-width: 260px;
-    min-width: 120px;
+    min-width: 140px;
     font-size: 11px;
     color: #1a1a1a;
     line-height: 1.3;
-    animation: staffBubbleIn 0.4s ease-out, staffBubbleOut 0.5s ease-in forwards;
-    animation-delay: 0s, 6.5s;
+    animation: staffBubbleIn 0.4s ease-out;
     pointer-events: auto;
     cursor: default;
+    z-index: 190;
   }
+  .staff-bubble.fade-out { animation: staffBubbleOut 0.5s ease-in forwards; }
   .staff-bubble::after {
     content: ''; position: absolute; bottom: -12px; left: 20px;
     border: 7px solid transparent; border-top-color: #1a1a1a; border-bottom: 0;
@@ -4769,6 +4770,10 @@
           </button>
         </div>
 
+        <!-- 🧑‍💼 社員サマリー：ランキングモードのみ表示（ビジネスカードの上に優先配置） -->
+        <div id="char-employees-summary" class="ranking-only" style="display:none; background:linear-gradient(135deg,#2a1a3e,#1f3a68); border:2px solid #ffd700; border-radius:6px; padding:8px; color:#fff; font-size:10px; box-shadow:0 2px 0 rgba(0,0,0,0.4); margin-bottom:6px;">
+          <!-- JSで描画 -->
+        </div>
         <!-- 🏢 ビジネスカード：ダーク基調・会社情報＋主人公の統合カード -->
         <div class="char-box" style="padding:0; overflow:hidden; border:3px solid #ffd700; background:#0d0d18; box-shadow:0 4px 0 #000, inset 0 0 12px rgba(255,215,0,0.08);">
           <!-- 会社ヘッダー（金リボン） -->
@@ -4809,10 +4814,6 @@
         </div>
         <!-- 🏢 会社ブーストバナー（ランキングモードのみ表示、現在の採掘ボーナス可視化） -->
         <div id="company-boost-banner" class="ranking-only" style="display:none; background:linear-gradient(90deg,#1a1a1a,#2a2a4a); border:2px solid #ffd700; padding:6px 8px; color:#fff; font-size:10px; font-weight:900; box-shadow:3px 3px 0 #000;"></div>
-        <!-- 🧑‍💼 社員サマリー（コンパクト：人数・ランク分布・採用ボタン） -->
-        <div id="char-employees-summary" class="ranking-only" style="display:none; background:linear-gradient(135deg,#2a1a3e,#1f3a68); border:2px solid #ffd700; border-radius:6px; padding:8px; color:#fff; font-size:10px; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
-          <!-- JSで描画 -->
-        </div>
         <!-- 🏢 旧の社員リスト：吹き出し方式に置き換えたので非表示維持（互換のため残置） -->
         <div id="char-employees-container" class="ranking-only" style="display:none; flex-direction:column; gap:4px;"></div>
 
@@ -4977,6 +4978,17 @@
       </div>
 
       <div class="result-gems" id="result-gems"></div>
+
+      <!-- 🏢 ランキングモード：会社経費レポート（家賃・人件費・採掘収入・純利益） -->
+      <div id="result-company-expenses" style="display:none; margin:12px 4px; padding:12px; background:linear-gradient(135deg,#1a1a2e,#2a1a4e); border:3px solid #ffd700; box-shadow:4px 4px 0 #000;">
+        <div style="text-align:center; font-size:13px; font-weight:900; letter-spacing:2px; color:#ffd700; margin-bottom:10px;">
+          🏢 本日の会社損益レポート
+        </div>
+        <div id="result-company-expenses-body" style="font-family:'Menlo',monospace; font-size:12px; line-height:1.8;">
+          <!-- JSで描画 -->
+        </div>
+      </div>
+
       <div class="family-scene">
         <svg width="55" height="80"><use href="#hanako"/></svg>
         <div class="family-msg" id="family-msg">花子：……お疲れさま。</div>
@@ -4989,7 +5001,7 @@
         <div style="flex:1;">
           <div class="name">👤 <span id="r-wallet-label">どうじまくん</span> 個人ウォレット</div>
           <div class="amt">$ <span id="r-personal-usdt">0</span> USDT</div>
-          <div class="sub">＋今日のインセンティブ報酬 <span id="r-incentive">0</span> USDT（採掘売上の20%）</div>
+          <div class="sub" id="r-income-note">＋今日のインセンティブ報酬 <span id="r-incentive">0</span> USDT（採掘売上の20%）</div>
           <div class="assets-display" id="r-assets"></div>
         </div>
       </div>
@@ -10449,6 +10461,16 @@ function goResult() {
   // 個人ウォレット表示
   document.getElementById('r-personal-usdt').textContent = state.personal.usdt.toFixed(2);
   document.getElementById('r-incentive').textContent = incentiveUsdt.toFixed(2) + (passiveIncome ? ` (＋不動産収入 $${passiveIncome})` : '');
+  // 📝 モード別に注釈をラベル付け替え
+  const incomeNote = document.getElementById('r-income-note');
+  if (incomeNote) {
+    if (state.gameMode === 'ranking') {
+      // ランキングモード＝独立社長：採掘売上は会社に100%、個人には翌朝の役員報酬のみ
+      incomeNote.innerHTML = `💼 役員報酬は<strong style="color:#ffd700;">翌朝 $20 USDT</strong> が自社から振込（採掘売上は100%会社へ）${passiveIncome ? `<br>🏠 本日の不動産収入 $${passiveIncome}` : ''}`;
+    } else {
+      incomeNote.innerHTML = `＋今日のインセンティブ報酬 <span id="r-incentive">${incentiveUsdt.toFixed(2)}</span> USDT（採掘売上の20%）${passiveIncome ? ` ＋不動産収入 $${passiveIncome}` : ''}`;
+    }
+  }
   // 🎨 アバター表示（ランキングモードのみ）
   const avatarWrap = document.getElementById('result-avatar-wrap');
   const walletLabel = document.getElementById('r-wallet-label');
@@ -10516,8 +10538,87 @@ function goResult() {
   }
   document.getElementById('family-msg').innerHTML = msg;
 
+  // 🏢 ランキングモード：会社経費レポート（家賃・人件費・採掘収入・純利益）
+  try { renderResultCompanyExpenses(); } catch(e) { console.warn('expenses render', e); }
+
   showScreen('screen-result');
   saveGame();
+}
+
+// 🏢 ランキングモードの結果画面：会社経費レポート描画
+function renderResultCompanyExpenses() {
+  const panel = document.getElementById('result-company-expenses');
+  const body = document.getElementById('result-company-expenses-body');
+  if (!panel || !body) return;
+  if (state?.gameMode !== 'ranking' || !state?.company) {
+    panel.style.display = 'none';
+    return;
+  }
+  const c = state.company;
+  const office = getOfficeInfo(c.officeLevel || 1);
+  const mult = state.personal?.priceMultiplier || 1;
+  const rent = Math.round(office.rent * mult);
+  const employees = c.employees || [];
+  const wagesByRank = {};
+  let totalWages = 0;
+  employees.forEach(e => {
+    const w = Math.round((e.wage || STAFF_DAILY_WAGE) * mult);
+    totalWages += w;
+    const rank = e.rank || 'E';
+    wagesByRank[rank] = (wagesByRank[rank] || { count: 0, total: 0 });
+    wagesByRank[rank].count++;
+    wagesByRank[rank].total += w;
+  });
+
+  // 今日の採掘売上（game.coins が DJM。USDT 換算は現在価格）
+  const binance = state?.markets?.binance;
+  const djmPrice = binance?.djmPrice || 0.005;
+  const miningDjm = game?.coins || 0;
+  const miningUsdtValue = miningDjm * djmPrice;
+
+  // 役員報酬（社長が会社から受け取る固定額）
+  const ceoPay = Math.round((typeof CEO_DAILY_EXEC_PAY !== 'undefined' ? CEO_DAILY_EXEC_PAY : 20) * mult);
+
+  const totalExpenses = rent + totalWages + ceoPay;
+  const netProfit = miningUsdtValue - totalExpenses;
+  const netColor = netProfit >= 0 ? '#7ae890' : '#ff7a7a';
+  const netSign = netProfit >= 0 ? '+' : '';
+
+  // 社員ランク別のブレイクダウン
+  const rankBreakdown = ['SSS','SS','S','A','B','C','D','E']
+    .filter(r => wagesByRank[r])
+    .map(r => `<span style="color:#b8860b;">${r}×${wagesByRank[r].count} ($${wagesByRank[r].total})</span>`)
+    .join(' / ') || '<span style="color:#888;">なし</span>';
+
+  body.innerHTML = `
+    <div style="display:flex; justify-content:space-between; color:#7ae890;">
+      <span>⛏ 採掘収入（${miningDjm.toLocaleString()} DJM × $${djmPrice.toFixed(5)})</span>
+      <b>+$${miningUsdtValue.toFixed(2)}</b>
+    </div>
+    <div style="height:1px; background:#555; margin:6px 0;"></div>
+    <div style="display:flex; justify-content:space-between; color:#ff7a7a;">
+      <span>🏬 オフィス家賃（${office.name}）</span>
+      <b>-$${rent}</b>
+    </div>
+    <div style="display:flex; justify-content:space-between; color:#ff7a7a;">
+      <span>🧑‍💼 社員給料（${employees.length}人）</span>
+      <b>-$${totalWages}</b>
+    </div>
+    <div style="padding-left:12px; font-size:10px; color:#ffd700;">└ ${rankBreakdown}</div>
+    <div style="display:flex; justify-content:space-between; color:#ff7a7a;">
+      <span>💼 社長役員報酬（→個人へ）</span>
+      <b>-$${ceoPay}</b>
+    </div>
+    <div style="height:2px; background:#ffd700; margin:8px 0;"></div>
+    <div style="display:flex; justify-content:space-between; font-size:14px;">
+      <span style="color:#fff;"><b>💰 本日の純利益</b></span>
+      <b style="color:${netColor}; font-size:16px;">${netSign}$${netProfit.toFixed(2)}</b>
+    </div>
+    <div style="font-size:9px; color:#aaa; margin-top:6px; text-align:center;">
+      ※ 経費は翌朝の「次の日へ」で会社ウォレットから自動引落し
+    </div>
+  `;
+  panel.style.display = '';
 }
 function nextDay() {
   // 📊 前日の締め損益を記録（state.dayを進める前に）
@@ -14294,13 +14395,16 @@ function spawnStaffBubble(employee, quote) {
   if (existing.length >= 3) existing[0].remove();
 
   // 配置位置（mineグリッド内でランダム、端に寄りすぎないよう）
-  const rect = mine.getBoundingClientRect();
-  const bubbleW = 220;
-  const bubbleH = 50;
-  const maxLeft = Math.max(10, rect.width - bubbleW - 10);
-  const maxTop  = Math.max(10, rect.height - bubbleH - 30);
-  const left = 10 + Math.random() * (maxLeft - 10);
-  const top  = 10 + Math.random() * (maxTop - 10);
+  //   ⚠️ 親.game が transform: scale されているため、getBoundingClientRect は
+  //       スケール後のサイズになる。offsetWidth/Height は内部座標系の素のサイズ。
+  const mineW = mine.offsetWidth || 600;
+  const mineH = mine.offsetHeight || 500;
+  const bubbleW = 240;
+  const bubbleH = 60;
+  const maxLeft = Math.max(20, mineW - bubbleW - 20);
+  const maxTop  = Math.max(20, mineH - bubbleH - 40);
+  const left = 20 + Math.random() * (maxLeft - 20);
+  const top  = 20 + Math.random() * (maxTop - 20);
 
   const ri = getStaffRankInfo(employee.rank || 'E');
   const avatarHtml = employee.avatar
@@ -14319,8 +14423,9 @@ function spawnStaffBubble(employee, quote) {
     </div>
   `;
   container.appendChild(bubble);
-  // 7秒後に自動削除
-  setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 7000);
+  // 6秒後にフェードアウト → 6.5秒で削除
+  setTimeout(() => { if (bubble.parentNode) bubble.classList.add('fade-out'); }, 6000);
+  setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 6550);
 }
 
 // 🗨️ 社員ローテーション（吹き出し方式）：7〜10秒おきに1〜2人が話す
