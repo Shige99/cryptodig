@@ -5689,10 +5689,26 @@ function currentMaxPickaxesOwned() {
 //   - 必ずMINESのオリジナル定義を優先して参照
 function getMineRequiredRank(mineObj) {
   if (!mineObj) return 1;
+  // 🎫 救済で今日だけ特例開放されていれば Lv.1 扱い
+  if (mineObj._tempUnlockDay != null && typeof state !== 'undefined' && state && state.day === mineObj._tempUnlockDay) {
+    return 1;
+  }
   const def = MINES.find(m => m.id === mineObj.id);
   if (def && def.requiredRank) return def.requiredRank;
   if (mineObj.requiredRank) return mineObj.requiredRank;
   return 1;
+}
+
+// 🏆 モード別のプレイヤーランクLv（鉱山開放チェック用）
+//   - 個人モード：採掘XP ランク（getCurrentRank().lv）
+//   - ランキングモード（会社経営編）：オフィスLv
+function getMyEffectiveRankLv() {
+  if (typeof state === 'undefined' || !state) return 1;
+  if (state.gameMode === 'ranking' && state.company) {
+    return Math.max(1, state.company.officeLevel || 1);
+  }
+  const cur = (typeof getCurrentRank === 'function') ? getCurrentRank() : { lv: 1 };
+  return cur.lv || 1;
 }
 
 // 🎒 消費アイテム（ショップのアイテムタブで購入、採掘中に発動するバフ系）
@@ -6614,26 +6630,34 @@ function renderMineGrid() {
   }
   // 6鉱山を3列で
   grid.style.gridTemplateColumns = '1fr 1fr 1fr';
-  // 🏅 プレイヤー現在ランク
+  // 🏅 モード別のプレイヤー（会社）ランク
   const myRank = getCurrentRank();
+  const myLv = getMyEffectiveRankLv();
+  const isRankingMode = state?.gameMode === 'ranking';
+  const myRankLabel = isRankingMode
+    ? `🏢 オフィスLv.${myLv} ${(getOfficeInfo(myLv).name || '')}`
+    : `${myRank.icon} Lv.${myRank.lv} ${myRank.name}`;
   state.mineStates.forEach(mine => {
     const card = document.createElement('div');
     card.className = 'mine-card';
     const dryRatio = mine.remainingDjm / mine.maxDjm;
     const isDry = mine.remainingDjm <= 0;
-    // 🔒 ランク制限：必要Lvに達してないと入れない（MINES定義を参照、旧セーブ対応）
+    // 🔒 ランク制限：必要Lvに達してないと入れない（モード別に基準が違う）
     const requiredRank = getMineRequiredRank(mine);
-    const isRankLocked = myRank.lv < requiredRank;
+    const isRankLocked = myLv < requiredRank;
     if (isDry) { card.style.opacity = 0.4; card.style.cursor = 'not-allowed'; }
     else if (isRankLocked) {
       card.style.opacity = 0.55; card.style.cursor = 'not-allowed';
       card.style.filter = 'grayscale(60%)';
       card.onclick = () => {
         SE.play('news_bad');
+        const unlockHint = isRankingMode
+          ? `オフィスをLv.${requiredRank}にアップグレード`
+          : `採掘Lv.${requiredRank} から解放`;
         showBuyToast(
           `<div class="ttl">🔒 ロック中</div>
-           <div class="amt">Lv.${requiredRank} から解放</div>
-           <div style="font-size:11px; margin-top:4px;">現在あなたは ${myRank.icon} Lv.${myRank.lv} ${myRank.name}</div>`,
+           <div class="amt">${unlockHint}</div>
+           <div style="font-size:11px; margin-top:4px;">現在あなたは ${myRankLabel}</div>`,
           '#b93a3a'
         );
       };
@@ -6703,14 +6727,16 @@ function renderMineGrid() {
 function chooseMine(mineId) {
   const mine = state.mineStates.find(m => m.id === mineId);
   if (!mine || mine.remainingDjm <= 0) return;
-  // 🔒 ランクロックの最終チェック（UIバイパスからの侵入防止、MINES定義を参照）
-  const myRank = getCurrentRank();
+  // 🔒 ランクロックの最終チェック（モード別基準：個人=採掘Lv / ランキング=オフィスLv）
+  const myLv = getMyEffectiveRankLv();
   const requiredRank = getMineRequiredRank(mine);
-  if (myRank.lv < requiredRank) {
+  if (myLv < requiredRank) {
     SE.play('news_bad');
+    const isRankingMode = state?.gameMode === 'ranking';
+    const hint = isRankingMode ? `オフィスLv.${requiredRank} が必要` : `Lv.${requiredRank} が必要`;
     showBuyToast(
       `<div class="ttl">🔒 入山拒否</div>
-       <div class="amt">Lv.${requiredRank} が必要</div>`,
+       <div class="amt">${hint}</div>`,
       '#b93a3a'
     );
     return;
@@ -10421,7 +10447,13 @@ function nextDay() {
   state.dailyEmission = DJM_DAILY_EMISSION_BASE + Math.floor(Math.random() * 200000 - 100000);
   state.mineStates.forEach(m => {
     if (m.id === state.chosenMine?.id) return;
-    const drain = Math.floor(m.maxDjm * (0.05 + Math.random() * 0.1));
+    // 🌱 枯渇寄りの鉱山は夜間に自然回復（鉱脈再生・最大 30% 戻る）
+    //    → 完全枯渇で詰むのを防ぐ
+    const recoverRatio = 0.03 + Math.random() * 0.05;   // 3〜8%/日
+    const recover = Math.floor(m.maxDjm * recoverRatio);
+    m.remainingDjm = Math.min(m.maxDjm, m.remainingDjm + recover);
+    // AIライバルによるドレイン（稼働中）— 回復より小さめ
+    const drain = Math.floor(m.maxDjm * (0.02 + Math.random() * 0.04));
     m.remainingDjm = Math.max(0, m.remainingDjm - drain);
   });
   // ステーキング報酬付与（日次）
@@ -10458,6 +10490,8 @@ function nextDay() {
   if (state.gameMode === 'ranking') {
     try { submitRankingToServer(); } catch(e) {}
   }
+  // 🌟 オフィスアップグレード可能ならポップアップ（毎朝チェック）
+  try { checkOfficeUpgradeAvailableAndPrompt(); } catch(e) {}
   // ライフイベント抽選 → コールバックで次画面振り分け
   triggerLifeEvent(() => routeAfterDay());
 }
@@ -13592,8 +13626,13 @@ const TUTORIAL_STEPS_RANKING = [
   },
   {
     icon: '🗻',
-    title: 'STEP 6：鉱山を選ぶ',
-    text: '6種類の鉱山、それぞれ<strong>必要ランク</strong>が設定されとる。<br>・Lv.1：新緑鉱山 / 北の辺境<br>・Lv.2：中央採掘場 / 水郷鉱山<br>・Lv.3：天空の採掘場<br>・Lv.4：伝説の大鉱脈<br><br>経験値を積んでランクを上げ、高収益鉱山を解放！',
+    title: 'STEP 6：鉱山を選ぶ（会社ランクで開放）',
+    text: '6種類の鉱山、それぞれ<strong style="color:#ffd700;">必要オフィスLv</strong>が設定されとる：<br>・<strong>Lv.1：新緑鉱山 / 北の辺境</strong>（最初から）<br>・<strong>Lv.2：中央採掘場 / 水郷鉱山</strong><br>・<strong>Lv.3：天空の採掘場</strong><br>・<strong>Lv.4：伝説の大鉱脈</strong><br><br>会社経営編では<strong style="color:#ff00aa;">採掘XPじゃなく「オフィスLv」が会社ランク</strong>！<br>次のSTEPで詳しく説明するで👇',
+  },
+  {
+    icon: '🏗',
+    title: 'STEP 6.5：🌟 オフィスをアップグレードして会社ランクUP',
+    text: '会社経営編の<strong style="color:#ffd700;">ランクアップ＝オフィスのアップグレード</strong>。<br><br>📊 <strong>5段階のオフィス</strong>：<br>・Lv.1 雑居オフィス（家賃$10、つるはし2本、社員3人）← 初期<br>・<strong style="color:#7ae890;">Lv.2 テナントビル</strong>（$500で昇格 / 家賃$30、つるはし3本、社員6人）<br>・Lv.3 タワーフロア（$2,000 / 家賃$80、つるはし5本、社員12人）<br>・Lv.4 自社ビル（$10,000 / 家賃$180、つるはし7本、社員25人）<br>・<strong style="color:#ff00aa;">Lv.5 グローバル本社</strong>（$50,000 / 家賃$400、つるはし10本、社員50人）<br><br>🎯 <strong>アップグレードで一気に色々強化！</strong><br>・<strong>つるはし装着可能数アップ</strong>（同時掘削増 → 採掘倍率UP）<br>・<strong>社員定員アップ</strong>（高ランク社員を雇える）<br>・<strong>新しい鉱山が解放</strong>（DJM大量採掘可能）<br><br>💵 <strong>原資の作り方</strong>：採掘売却＋取引所アービ＋ステーキングで会社USDTを貯めよう！<br>会社USDTが昇格費用に達したら<strong style="color:#ffd700;">自動で「アップグレードする？」とポップアップ</strong>が出るで！',
   },
   {
     icon: '⛏',
@@ -14348,6 +14387,111 @@ async function fireStaff(empId) {
 
 // 🏢 会社経営パネル描画（ランキングモードのみ）
 //    新 company-panel-modal 用：サマリー・チャート・社員リストを個別IDで描画
+// 🌟 オフィスアップグレード可能になったら通知ポップアップ（1Lvにつき1回）
+//    nextDay や 取引完了など、お金が増えたタイミングで呼ぶ
+function checkOfficeUpgradeAvailableAndPrompt() {
+  if (!state || state.gameMode !== 'ranking' || !state.company) return;
+  const cur = getOfficeInfo(state.company.officeLevel || 1);
+  const next = COMPANY_OFFICE_LEVELS.find(o => o.lv === cur.lv + 1);
+  if (!next) return; // 最高位
+  if ((state.usdt || 0) < next.upgradeCost) return; // まだ足りない
+  // すでに同じLv向けにオファー済みならスキップ
+  if (state.company.upgradeOfferedFor === next.lv) return;
+  state.company.upgradeOfferedFor = next.lv;
+
+  try { SE.play('news_great'); } catch(_){}
+
+  const html = `
+    <div style="text-align:center;">
+      <div style="font-size:18px; font-weight:900; color:#ffd700; margin-bottom:8px;">🎉 オフィス昇格できます！</div>
+      <div style="font-size:14px; color:#fff; margin-bottom:8px;">
+        会社USDTが <b style="color:#ffd700;">$${(state.usdt||0).toFixed(2)}</b> に到達。<br>
+        <b>${next.name}</b>（Lv.${next.lv}）にアップグレード可能！
+      </div>
+      <div style="background:rgba(255,215,0,0.1); border:2px solid #ffd700; padding:10px; margin:10px 0; text-align:left; font-size:13px; color:#fff; line-height:1.6;">
+        <div>💰 <b>費用：$${next.upgradeCost.toLocaleString()}</b></div>
+        <div>🏬 家賃：$${cur.rent} → <b style="color:#b93a3a;">$${next.rent}/日</b></div>
+        <div>🔨 つるはし最大：${cur.maxPickaxes} → <b style="color:#7ae890;">${next.maxPickaxes}本</b></div>
+        <div>🧑‍💼 社員定員：${cur.capacity} → <b style="color:#7ae890;">${next.capacity}人</b></div>
+        <div>⛰ 鉱山開放：<b style="color:#ff00aa;">Lv.${next.lv} まで</b></div>
+      </div>
+      <div style="font-size:11px; color:#ccc; margin-top:6px;">いま昇格しますか？（あとで会社パネルからも可能）</div>
+    </div>
+  `;
+  if (typeof customConfirm === 'function') {
+    customConfirm(html, {
+      title: '🎉 オフィス昇格のチャンス',
+      html: true,
+      kind: 'good',
+      okLabel: '🏗 昇格する！',
+      okKind: 'good',
+      cancelLabel: 'あとで',
+    }).then(ok => {
+      if (ok) {
+        _doUpgradeOffice(next.upgradeCost, next);
+      } else {
+        try { SE.play('btn_cancel'); } catch(_){}
+        showBuyToast(
+          `<div class="ttl">🏗 アップグレード保留</div>
+           <div style="font-size:11px;margin-top:4px;">あとで会社パネルから昇格できるで！</div>`,
+          '#888'
+        );
+      }
+    });
+  } else {
+    if (confirm(`オフィスを ${next.name}（Lv.${next.lv}）にアップグレードしますか？\n費用: $${next.upgradeCost.toLocaleString()}`)) {
+      _doUpgradeOffice(next.upgradeCost, next);
+    }
+  }
+}
+
+// 🏗 オフィスアップグレード（ランキングモード会社経営編の「ランクアップ」）
+function upgradeOffice() {
+  if (!state || state.gameMode !== 'ranking' || !state.company) return;
+  const cur = getOfficeInfo(state.company.officeLevel || 1);
+  const next = COMPANY_OFFICE_LEVELS.find(o => o.lv === cur.lv + 1);
+  if (!next) {
+    showBuyToast('<div class="ttl">🏆 最高位オフィス！</div><div>これ以上アップグレードできない</div>', '#ffd700');
+    return;
+  }
+  const cost = next.upgradeCost;
+  if ((state.usdt || 0) < cost) {
+    try { SE.play('news_bad'); } catch(_){}
+    showBuyToast(
+      `<div class="ttl">💸 資金不足</div>
+       <div class="amt">$${cost.toLocaleString()} 必要</div>
+       <div style="font-size:11px;margin-top:4px;">会社ウォレット: $${(state.usdt||0).toFixed(2)}</div>`,
+      '#b93a3a'
+    );
+    return;
+  }
+  // 確認
+  if (typeof customConfirm === 'function') {
+    customConfirm(
+      `🏗 ${next.name}（Lv.${next.lv}）に昇格しますか？\n\n費用：$${cost.toLocaleString()}\n家賃：$${next.rent}/日\n社員定員：${next.capacity}人\n鉱山開放：Lv.${next.lv} まで`,
+      { title: '🏗 オフィスアップグレード', kind: 'good', okLabel: '昇格する', okKind: 'good', cancelLabel: 'やめる' }
+    ).then(ok => { if (ok) _doUpgradeOffice(cost, next); });
+  } else {
+    _doUpgradeOffice(cost, next);
+  }
+}
+function _doUpgradeOffice(cost, next) {
+  state.usdt -= cost;
+  state.company.officeLevel = next.lv;
+  // オファー履歴をリセット（次のLvの自動ポップアップを許可）
+  state.company.upgradeOfferedFor = null;
+  try { SE.play('news_great'); } catch(_){}
+  showBuyToast(
+    `<div class="ttl">🎉 ${next.name} に昇格！</div>
+     <div class="amt">Lv.${next.lv} オフィス</div>
+     <div style="font-size:11px;margin-top:6px;">鉱山 Lv.${next.lv} まで開放／ 社員定員 ${next.capacity}人／ つるはし ${next.maxPickaxes}本</div>`,
+    '#ffd700'
+  );
+  try { updateAllHUD(); } catch(_){}
+  try { renderCompanyPanel(); } catch(_){}
+  try { saveGame(); } catch(_){}
+}
+
 function renderCompanyPanel() {
   const modal = document.getElementById('company-panel-modal');
   if (!modal) return;
@@ -14372,6 +14516,10 @@ function renderCompanyPanel() {
   const spdPct = Math.round((bonuses.speedMult - 1) * 100);
 
   // サマリー
+  const nextOffice = COMPANY_OFFICE_LEVELS.find(o => o.lv === (office.lv + 1));
+  const canUpgrade = !!nextOffice;
+  const usdt = state.usdt || 0;
+  const upgradeAffordable = canUpgrade && usdt >= nextOffice.upgradeCost;
   const summaryEl = document.getElementById('wallet-company-summary');
   if (summaryEl) {
     summaryEl.innerHTML = `
@@ -14386,6 +14534,34 @@ function renderCompanyPanel() {
           ? `<div style="font-size:9px; color:#666; margin-top:3px;">累計家賃 $${c.totalRentPaid||0} ／ 累計人件費 $${c.totalWagesPaid||0}</div>`
           : ''}
       </div>
+
+      <!-- 🏢 オフィスアップグレード UI -->
+      ${canUpgrade ? `
+        <div style="background:linear-gradient(135deg,#1f3a68,#2a2a4a); border:3px solid #ffd700; padding:10px; margin-top:8px; color:#fff; border-radius:6px;">
+          <div style="font-weight:900; font-size:12px; color:#ffd700; margin-bottom:6px; letter-spacing:1.5px;">🏆 オフィスアップグレード</div>
+          <div style="font-size:11px; line-height:1.5;">
+            <b>${nextOffice.name}</b>（Lv.${nextOffice.lv}）に昇格：<br>
+            ・家賃 $${nextOffice.rent}/日（今の+$${nextOffice.rent - office.rent}）<br>
+            ・社員定員 <b style="color:#7ae890;">${nextOffice.capacity}人</b>（${nextOffice.capacity - office.capacity}人増）<br>
+            ・つるはし最大 <b style="color:#ffd700;">${nextOffice.maxPickaxes}本</b><br>
+            ・鉱山開放 <b style="color:#ff00aa;">Lv.${nextOffice.lv} まで</b>
+          </div>
+          <button onclick="upgradeOffice()" ${upgradeAffordable ? '' : 'disabled'}
+            style="width:100%; margin-top:8px; padding:8px; font-size:13px; font-weight:900;
+            background:${upgradeAffordable ? 'linear-gradient(135deg,#ffd700,#d4a300)' : '#555'};
+            color:${upgradeAffordable ? '#1a1a1a' : '#aaa'};
+            border:3px solid #1a1a1a; border-radius:5px;
+            cursor:${upgradeAffordable ? 'pointer' : 'not-allowed'};
+            box-shadow:${upgradeAffordable ? '0 3px 0 #000' : 'none'};">
+            🏗 $${nextOffice.upgradeCost.toLocaleString()} でアップグレード
+            ${upgradeAffordable ? '' : `（残り $${(nextOffice.upgradeCost - usdt).toFixed(2)} 足りない）`}
+          </button>
+        </div>
+      ` : `
+        <div style="background:#ffd700; color:#1a1a1a; padding:10px; margin-top:8px; text-align:center; font-weight:900; border:3px solid #1a1a1a; border-radius:6px;">
+          🏆 最高位オフィス達成！（${office.name}）
+        </div>
+      `}
     `;
   }
 
