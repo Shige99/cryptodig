@@ -4571,16 +4571,13 @@
         <div class="ffb-sub">タップで1日を早送り</div>
       </div>
     </div>
-    <!-- ニュースティッカー -->
-    <div class="news-ticker">
-      <div class="ticker-content" id="news-ticker-content">読み込み中…</div>
-    </div>
-    <div class="hud" style="grid-template-columns: auto 220px auto 140px auto auto auto auto;">
+    <!-- トップHUD：つるはし / 日付 / USDT / ROND / DJM / 🐻ウォレット / 🔊音量 -->
+    <div class="hud" style="grid-template-columns: auto 220px auto 120px auto auto auto auto auto;">
       <div class="label" id="pick-label">
         <svg width="18" height="18" style="vertical-align:middle" id="pick-icon"><use href="#pickaxe-mid"/></svg>
         つるはし
       </div>
-      <!-- 耐久度ゲージ（次に使うつるはしの耐久を可視化） -->
+      <!-- 耐久度ゲージ -->
       <div class="hud-dura" id="hud-dura">
         <div class="hud-dura-name" id="hud-dura-name">-</div>
         <div class="hud-dura-bar-wrap">
@@ -4590,11 +4587,14 @@
       </div>
       <div class="label">🔨</div>
       <div class="day-display" id="pick-summary">- 本 / -</div>
-      <div class="day-display" style="background:linear-gradient(90deg,#1a1a1a,#3a3a3a); border:2px solid #ffd700; min-width:210px;"><span style="color:#ffd700;">📅 <span id="hud-date">2026/05/01</span></span> ⏰ <span id="hud-time">9:00</span><span id="day-num-inline" style="display:none;"></span><span id="day-num" style="display:none;"></span></div>
+      <div class="day-display" style="background:linear-gradient(90deg,#1a1a1a,#3a3a3a); border:2px solid #ffd700; min-width:190px;"><span style="color:#ffd700;">📅 <span id="hud-date">2026/05/01</span></span> ⏰ <span id="hud-time">9:00</span><span id="day-num-inline" style="display:none;"></span><span id="day-num" style="display:none;"></span></div>
       <div class="rond-display" style="background:#26a17b; font-size:12px;">$<span id="usdt-amt">0</span></div>
       <div class="rond-display" style="font-size:12px;"><span id="rond-amt">0</span> ROND</div>
       <div class="coin-display"><span id="djm-amt">0</span> DJM</div>
+      <!-- 🐻ウォレット・🔊音量ボタン：DJMの右隣にまとめる統合カード（JSで配置） -->
+      <div id="hud-action-buttons" style="display:flex; gap:4px; align-items:center; padding:3px; background:rgba(0,0,0,0.4); border:2px solid #555; border-radius:8px;"></div>
     </div>
+    <!-- DJM供給・現在鉱山（1行） -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
       <div class="djm-supply" style="margin-bottom:0;">
         <svg width="14" height="14" style="vertical-align:middle"><use href="#djm-mark"/></svg> DJM総供給: <span id="djm-circ">0</span> / <span id="djm-max">10億</span> (今日の排出枠 <span id="djm-emit">0</span>残/<span id="djm-emit-total">0</span>)
@@ -4603,36 +4603,43 @@
         ⛰ 現在の鉱山: <span id="cur-mine-name">-</span> ｜ 残り <span id="cur-mine-remain">0</span> DJM
       </div>
     </div>
-    <!-- 🎯 ミッションヒント：独立した行で全幅表示（フル表示・切れない） -->
-    <div id="hud-mission-hint" style="background:linear-gradient(90deg,#3a7a4a,#5a3e7a,#5a3e7a,#3a7a4a); border:2px solid #ffd700; border-radius:6px; padding:6px 12px; color:#fff; font-weight:900; font-size:12px; margin-bottom:6px; text-align:center; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
-      🎯 <span id="hud-mission-text">採掘で稼ごう</span>
-    </div>
-    <!-- 🎯 HUD行3：市場・個人財布（左半）／ランク・アクションボタン（右半） -->
-    <div style="display:grid; grid-template-columns: 1fr auto; gap:6px; margin-bottom:6px; align-items:center;">
-      <!-- 左側：市場情報 + 個人財布 -->
-      <div style="display:flex; gap:6px; align-items:center; min-width:0; flex-wrap:wrap;">
-        <div style="background:#0a0a0a; border:2px solid #b8860b; padding:4px 8px; border-radius:6px; flex-shrink:0;">
-          <span style="color:#b8860b; font-weight:900; font-size:10px;">📡 LIVE市場</span>
-          <span id="mini-ticker" style="margin-left:6px; font-size:10px;"></span>
-        </div>
-        <div style="background:linear-gradient(135deg,#1f3a68,#5a3e7a); border:2px solid #ffd700; border-radius:6px; padding:4px 10px; color:#fff; font-weight:900; font-size:11px; flex-shrink:0; white-space:nowrap;">
-          <span id="hud-mode-badge" style="background:#3a7a4a; color:#fff; padding:1px 5px; margin-right:4px; border:1px solid #ffd700; font-size:9px; border-radius:3px;">👨‍👩‍👧 個人</span>
-          👤 <span id="hud-personal-label">どうじま個人</span>: <span style="color:#ffd700;">$<span id="hud-personal-usdt">0</span></span>
-          <span id="hud-company-badge" style="margin-left:4px; font-size:9px; display:none; background:#ffd700; color:#000; padding:1px 4px; border-radius:3px;">🏢 社長</span>
-        </div>
-      </div>
-      <!-- 右側：ランクHUD + アクションボタン群 -->
-      <div style="display:flex; gap:6px; align-items:center;">
-        <!-- 🏅 ランクHUD（コンパクト版） -->
-        <div class="rank-hud" style="background:linear-gradient(135deg,#1a1a1a,#2a2a4a); border:2px solid #ffd700; border-radius:6px; padding:4px 10px; color:#fff; font-weight:900; font-size:11px; min-width:160px;"></div>
-        <!-- アクションボタン（音量・ウォレット・会社詳細）をまとめる統合カード -->
-        <div id="hud-action-buttons" style="display:flex; gap:4px; align-items:center; padding:3px; background:rgba(0,0,0,0.4); border:2px solid #555; border-radius:8px;"></div>
-      </div>
-    </div>
 
     <div class="game-main">
       <!-- 左サイド -->
       <div class="side">
+        <!-- 🎯 ミッションヒント -->
+        <div id="hud-mission-hint" style="background:linear-gradient(90deg,#3a7a4a,#5a3e7a,#5a3e7a,#3a7a4a); border:2px solid #ffd700; border-radius:6px; padding:5px 8px; color:#fff; font-weight:900; font-size:11px; text-align:center; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
+          🎯 <span id="hud-mission-text">採掘で稼ごう</span>
+        </div>
+
+        <!-- 📡 ニュースティッカー（LIVE市場＋世界ニュース） -->
+        <div class="news-ticker" style="margin-bottom:0; border-radius:6px; border-width:2px;">
+          <div class="ticker-content" id="news-ticker-content">読み込み中…</div>
+        </div>
+
+        <!-- 🏢 会社パネル：ランク・オフィス・個人財布・会社ウォレットボタン -->
+        <div id="side-company-panel" style="background:linear-gradient(180deg,#1f3a68,#2a2a4a); border:3px solid #5a8ad6; border-radius:8px; padding:8px; color:#fff; box-shadow:0 2px 0 rgba(0,0,0,0.5);">
+          <!-- モードバッジ＆プレイヤー個人財布 -->
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:4px; margin-bottom:6px; flex-wrap:wrap;">
+            <span id="hud-mode-badge" style="background:#3a7a4a; color:#fff; padding:2px 6px; border:1px solid #ffd700; font-size:9px; border-radius:3px; font-weight:900;">👨‍👩‍👧 個人</span>
+            <span style="font-size:10px; font-weight:900;">👤 <span id="hud-personal-label">個人</span>: <span style="color:#ffd700;">$<span id="hud-personal-usdt">0</span></span></span>
+            <span id="hud-company-badge" style="font-size:9px; display:none; background:#ffd700; color:#000; padding:1px 4px; border-radius:3px; font-weight:900;">🏢 社長</span>
+          </div>
+          <!-- 🏅 採掘ランクHUD -->
+          <div class="rank-hud" style="background:rgba(0,0,0,0.4); border:1px solid #ffd700; border-radius:5px; padding:4px 8px; color:#fff; font-weight:900; font-size:10px; margin-bottom:6px;"></div>
+          <!-- 🏢 会社ブーストバナー（ランキングのみ） -->
+          <div id="company-boost-banner" class="ranking-only" style="display:none; background:linear-gradient(90deg,#1a1a1a,#2a2a4a); border:1px solid #ffd700; border-radius:5px; padding:4px 6px; color:#fff; font-size:9px; font-weight:900; margin-bottom:6px;"></div>
+          <!-- 🐻 会社ウォレットを開くボタン -->
+          <button onclick="toggleWallet()" style="width:100%; background:linear-gradient(135deg,#ff8ac6,#e74c9e); border:2px solid #1a1a1a; border-radius:6px; padding:5px 8px; color:#fff; font-weight:900; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
+            <svg width="18" height="18" viewBox="0 0 64 64"><use href="#pink-bear"/></svg>
+            <span>会社ウォレット $<span id="hud-company-wallet-usdt">0</span></span>
+          </button>
+          <!-- 🏢 会社詳細モーダルを開くリンク（ランキングモードのみ） -->
+          <button class="ranking-only" onclick="toggleCompanyPanel()" style="display:none; width:100%; margin-top:5px; background:linear-gradient(135deg,#5a3e7a,#ff00aa); border:2px solid #1a1a1a; border-radius:6px; padding:4px 8px; color:#fff; font-weight:900; font-size:10px; cursor:pointer; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
+            🏢 会社詳細を開く
+          </button>
+        </div>
+
         <!-- 🏢 ビジネスカード：ダーク基調・会社情報＋主人公の統合カード -->
         <div class="char-box" style="padding:0; overflow:hidden; border:3px solid #ffd700; background:#0d0d18; box-shadow:0 4px 0 #000, inset 0 0 12px rgba(255,215,0,0.08);">
           <!-- 会社ヘッダー（金リボン） -->
@@ -4643,13 +4650,17 @@
               <div id="side-company-sub" style="font-size:9px; color:#3a2a0a; margin-top:2px; line-height:1.2; font-weight:800;">読み込み中...</div>
             </div>
           </div>
-          <!-- 主人公本体（ダーク背景でアバターを引き立てる） -->
-          <div style="padding:8px 4px 6px 4px; text-align:center; background:radial-gradient(circle at 50% 0%, #1a2a4a 0%, #0d0d18 70%);">
-            <svg width="78" height="108" id="char-portrait" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));"><use href="#dojima" id="portrait-use"/></svg>
-            <div id="char-avatar-overlay" style="display:none; margin-top:-108px; position:relative; pointer-events:none;"></div>
-            <!-- 主人公名（カード下部のネームプレート） -->
-            <div style="margin-top:4px; padding:3px 6px; background:linear-gradient(90deg, transparent, rgba(255,215,0,0.15), transparent); border-top:1px solid rgba(255,215,0,0.4); border-bottom:1px solid rgba(255,215,0,0.4);">
-              <div class="name" id="char-player-name" style="color:#ffd700; font-size:13px; font-weight:900; letter-spacing:1px; text-shadow:0 1px 2px rgba(0,0,0,0.8); margin:0; padding:0;">堂島 太郎</div>
+          <!-- 主人公本体（アバターをデカく中央に配置、周囲を埋める） -->
+          <div style="padding:6px 0 0 0; text-align:center; background:radial-gradient(circle at 50% 30%, #1a2a4a 0%, #0d0d18 75%); position:relative;">
+            <!-- 装飾：角の金色アクセント -->
+            <div style="position:absolute; top:4px; left:4px; width:10px; height:10px; border-top:2px solid #ffd700; border-left:2px solid #ffd700; opacity:0.7;"></div>
+            <div style="position:absolute; top:4px; right:4px; width:10px; height:10px; border-top:2px solid #ffd700; border-right:2px solid #ffd700; opacity:0.7;"></div>
+            <!-- アバター：幅100%で枠いっぱい（viewBoxは dojima symbol と同じ140x160） -->
+            <svg width="100%" height="160" viewBox="0 0 140 160" preserveAspectRatio="xMidYMax meet" id="char-portrait" style="display:block; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));"><use href="#dojima" id="portrait-use" width="140" height="160"/></svg>
+            <div id="char-avatar-overlay" style="display:none; margin-top:-160px; position:relative; pointer-events:none;"></div>
+            <!-- 主人公名（カード下部のゴールドネームプレート） -->
+            <div style="margin-top:2px; padding:4px 6px; background:linear-gradient(90deg, rgba(255,215,0,0.05), rgba(255,215,0,0.25), rgba(255,215,0,0.05)); border-top:2px solid rgba(255,215,0,0.5); border-bottom:2px solid #1a1a1a;">
+              <div class="name" id="char-player-name" style="color:#ffd700; font-size:13px; font-weight:900; letter-spacing:1.5px; text-shadow:0 1px 2px rgba(0,0,0,0.9); margin:0; padding:0;">堂島 太郎</div>
             </div>
             <!-- 旧会社ステータス：上の金リボンに統合したので非表示 -->
             <div id="char-company-status" style="display:none;"></div>
@@ -5255,13 +5266,23 @@ function refreshAvatarDisplays() {
       : '<svg width="150" height="200"><use href="#dojima-fire"/></svg>';
   }
 
-  // 採掘画面の自キャラ — char-portraitの中身を直接入れ替え（svg>svgネスト）
+  // 採掘画面の自キャラ — char-portraitの中身を直接入れ替え
+  //    外側svg viewBox="0 0 140 160" なので、アバターは同viewBoxに合わせたサイズで
   const charPortrait = document.getElementById('char-portrait');
   if (charPortrait) {
     if (useAvatar) {
-      charPortrait.innerHTML = renderAvatarSVG(state.avatar, { size: 70 });
+      // ネストSVG：親の 140x160 領域いっぱいに配置
+      charPortrait.innerHTML = renderAvatarSVG(state.avatar, { size: 140 });
+      // ネストした svg に x/y と viewBox を強制
+      const inner = charPortrait.querySelector('svg');
+      if (inner) {
+        inner.setAttribute('x', '0');
+        inner.setAttribute('y', '0');
+        inner.setAttribute('width', '140');
+        inner.setAttribute('height', '160');
+      }
     } else {
-      charPortrait.innerHTML = '<use href="#dojima" id="portrait-use"/>';
+      charPortrait.innerHTML = '<use href="#dojima" id="portrait-use" width="140" height="160"/>';
     }
   }
   // オーバーレイ方式は廃止
@@ -13892,19 +13913,10 @@ function closeCompanyPanel() {
   try { SE.play('btn_cancel'); } catch(_){}
 }
 
-// 会社詳細ボタンの表示/非表示・値更新（updateAllHUDから呼び出し）
+// 会社詳細ボタン：左サイドの会社パネルに統合したのでフローティングは常時非表示
 function updateCompanyPanelButton() {
   const btn = document.getElementById('company-panel-btn');
-  if (!btn) return;
-  if (state?.gameMode === 'ranking' && state?.company) {
-    btn.style.display = 'flex';
-    const totalEl = document.getElementById('company-btn-total');
-    if (totalEl && typeof calcCompanyWealthMarket === 'function') {
-      totalEl.textContent = Math.floor(calcCompanyWealthMarket()).toLocaleString();
-    }
-  } else {
-    btn.style.display = 'none';
-  }
+  if (btn) btn.style.display = 'none';
 }
 
 // 🏢 会社ブーストバナー：現在の採掘DJM倍率・速度倍率・出勤人数を表示
@@ -14434,6 +14446,9 @@ function renderWallet() {
   if (btnL) btnL.textContent = connectedExchange ? EXCHANGES.find(e => e.id === connectedExchange).name : '会社';
   const dot = document.getElementById('wallet-conn-dot');
   if (dot) dot.classList.toggle('on', !!connectedExchange);
+  // 会社パネル内のウォレットボタンUSDT表示も同期
+  const sidePanelUsdt = document.getElementById('hud-company-wallet-usdt');
+  if (sidePanelUsdt) sidePanelUsdt.textContent = (state.usdt || 0).toFixed(2);
 
   // 取引所ボタン
   const grid = document.getElementById('wallet-ex-buttons');
@@ -15513,12 +15528,14 @@ window.addEventListener('load', () => {
       const el = document.getElementById(id);
       if (el && gameEl && el.parentNode !== gameEl) gameEl.appendChild(el);
     });
-    // ボタン類は HUD のアクションコンテナに移動（モダンなアイコン中心デザインに刷新）
+    // ボタン類は HUD のアクションコンテナに移動（音量＋ウォレット）
     const hudBtnContainer = document.getElementById('hud-action-buttons');
     if (hudBtnContainer) {
       const soundBtn = document.getElementById('sound-btn');
       const walletBtn = document.querySelector('.wallet-btn');
       const companyBtn = document.getElementById('company-panel-btn');
+      // 🚫 会社詳細フローティングボタンは廃止（左サイドの会社パネルに統合）
+      if (companyBtn) companyBtn.style.display = 'none';
 
       // 🎨 統一スタイル：丸み・シャドウ・コンパクトアイコン中心
       const baseStyle = `
@@ -15537,7 +15554,7 @@ window.addEventListener('load', () => {
         transition: transform 0.08s, box-shadow 0.08s;
         min-height: 32px;
       `;
-      [soundBtn, walletBtn, companyBtn].forEach(btn => {
+      [soundBtn, walletBtn].forEach(btn => {
         if (!btn) return;
         btn.setAttribute('style', btn.getAttribute('style') ? btn.getAttribute('style') + ';' + baseStyle : baseStyle);
         // ホバー/タップ時のフィードバック
@@ -15553,7 +15570,7 @@ window.addEventListener('load', () => {
         const txt = soundBtn.querySelector('span:not(#sound-btn-icon)');
         if (txt) txt.style.display = 'none';
       }
-      // ウォレットボタン：「🏢 $XX」にコンパクト化
+      // ウォレットボタン：ピンクベア＋$XX にコンパクト化
       if (walletBtn) {
         const winfo = walletBtn.querySelector('.winfo');
         if (winfo) {
@@ -15563,21 +15580,6 @@ window.addEventListener('load', () => {
           const v = winfo.querySelector('.v');
           if (v) v.style.fontSize = '11px';
         }
-        const wfox = walletBtn.querySelector('.wfox');
-        if (wfox) wfox.style.fontSize = '16px';
-      }
-      // 会社詳細ボタン：「🏢 $XX」にコンパクト化
-      if (companyBtn) {
-        const innerDiv = companyBtn.querySelector('div[style*="font-size:9px"]');
-        if (innerDiv) {
-          // 「会社詳細」テキストを削除、$だけ残す
-          const labelChild = innerDiv.querySelector('div:first-child');
-          if (labelChild) labelChild.style.display = 'none';
-          const v = innerDiv.querySelector('.v');
-          if (v) v.style.fontSize = '11px';
-        }
-        const iconDiv = companyBtn.querySelector('div[style*="font-size:22px"]');
-        if (iconDiv) iconDiv.style.fontSize = '16px';
       }
     }
   } catch(_){}
