@@ -4649,19 +4649,20 @@
     </div>
 
     <!-- 📡 ティッカー群（NEWS / MARKET / MISSION）：ゲーム全幅・視認性重視 -->
-    <div style="display:flex; flex-direction:column; gap:4px; border-radius:6px; overflow:hidden; border:2px solid #1a1a1a; box-shadow:0 2px 0 rgba(0,0,0,0.4); margin-bottom:6px;">
+    <!-- ⚠️ flex-shrink:0 と行flex-shrink:0 で、screen-game(flex col)に潰されないようにする -->
+    <div style="display:flex; flex-direction:column; gap:4px; border-radius:6px; overflow:hidden; border:2px solid #1a1a1a; box-shadow:0 2px 0 rgba(0,0,0,0.4); margin-bottom:6px; flex-shrink:0;">
       <!-- 📰 NEWS ティッカー -->
-      <div class="ticker-row" style="background:linear-gradient(90deg,#000,#3a0a0a,#000); color:#fff; overflow:hidden; height:40px; position:relative;">
+      <div class="ticker-row" style="background:linear-gradient(90deg,#000,#3a0a0a,#000); color:#fff; overflow:hidden; height:40px; min-height:40px; flex-shrink:0; position:relative;">
         <div class="ticker-label" style="background:#b93a3a; color:#fff; position:absolute; left:0; top:0; bottom:0; padding:0 14px; display:flex; align-items:center; font-size:13px; font-weight:900; letter-spacing:2px; z-index:2; border-right:2px solid #1a1a1a; box-shadow:2px 0 4px rgba(0,0,0,0.5);">📰 NEWS</div>
         <div id="news-ticker-content" style="display:inline-block; white-space:nowrap; padding-left:120px; animation:tickerScrollVisible 50s linear infinite; font-size:16px; font-weight:900; line-height:40px; color:#fff; text-shadow:0 1px 2px #000;">読み込み中…</div>
       </div>
       <!-- 📊 MARKET ティッカー -->
-      <div class="ticker-row" style="background:linear-gradient(90deg,#000,#0a3a1a,#000); color:#fff; overflow:hidden; height:40px; position:relative;">
+      <div class="ticker-row" style="background:linear-gradient(90deg,#000,#0a3a1a,#000); color:#fff; overflow:hidden; height:40px; min-height:40px; flex-shrink:0; position:relative;">
         <div class="ticker-label" style="background:#3a7a4a; color:#fff; position:absolute; left:0; top:0; bottom:0; padding:0 14px; display:flex; align-items:center; font-size:13px; font-weight:900; letter-spacing:2px; z-index:2; border-right:2px solid #1a1a1a; box-shadow:2px 0 4px rgba(0,0,0,0.5);">📊 MARKET</div>
         <div id="market-ticker-content" style="display:inline-block; white-space:nowrap; padding-left:120px; animation:tickerScrollVisible 25s linear infinite; font-size:16px; font-weight:900; line-height:40px; color:#fff; text-shadow:0 1px 2px #000;">価格取得中…</div>
       </div>
       <!-- 🎯 MISSION ティッカー -->
-      <div class="ticker-row" style="background:linear-gradient(90deg,#000,#3a1a5a,#000); color:#fff; overflow:hidden; height:40px; position:relative;">
+      <div class="ticker-row" style="background:linear-gradient(90deg,#000,#3a1a5a,#000); color:#fff; overflow:hidden; height:40px; min-height:40px; flex-shrink:0; position:relative;">
         <div class="ticker-label" style="background:#5a3e7a; color:#fff; position:absolute; left:0; top:0; bottom:0; padding:0 14px; display:flex; align-items:center; font-size:13px; font-weight:900; letter-spacing:2px; z-index:2; border-right:2px solid #1a1a1a; box-shadow:2px 0 4px rgba(0,0,0,0.5);">🎯 MISSION</div>
         <div id="hud-mission-hint" style="display:inline-block; white-space:nowrap; padding-left:135px; animation:tickerScrollVisible 40s linear infinite; font-size:16px; font-weight:900; line-height:40px; color:#fff; text-shadow:0 1px 2px #000;">
           <span id="hud-mission-text">採掘で稼ごう</span>
