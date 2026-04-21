@@ -4592,24 +4592,31 @@
         ⛰ 現在の鉱山: <span id="cur-mine-name">-</span> ｜ 残り <span id="cur-mine-remain">0</span> DJM
       </div>
     </div>
-    <div style="display:grid; grid-template-columns:auto 1fr auto auto auto; gap:6px; margin-bottom:6px; align-items:center;">
-      <div style="background:#0a0a0a; border:2px solid #b8860b; padding:4px 8px;">
-        <span style="color:#b8860b; font-weight:900; font-size:10px;">📡 LIVE市場(₿inance)</span>
-        <span id="mini-ticker" style="margin-left:6px;"></span>
+    <!-- 🎯 HUD行3：ミッション・個人財布（左半）／ランク・アクションボタン（右半） -->
+    <div style="display:grid; grid-template-columns: 1fr auto; gap:6px; margin-bottom:6px; align-items:center;">
+      <!-- 左側：市場情報 + ミッション -->
+      <div style="display:flex; gap:6px; align-items:center; min-width:0;">
+        <div style="background:#0a0a0a; border:2px solid #b8860b; padding:4px 8px; border-radius:6px; flex-shrink:0;">
+          <span style="color:#b8860b; font-weight:900; font-size:10px;">📡 LIVE市場</span>
+          <span id="mini-ticker" style="margin-left:6px; font-size:10px;"></span>
+        </div>
+        <!-- 🎯 次のミッションヒント（1行省略対応） -->
+        <div id="hud-mission-hint" style="background:linear-gradient(90deg,#3a7a4a,#5a3e7a); border:2px solid #ffd700; border-radius:6px; padding:4px 10px; color:#fff; font-weight:900; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">
+          🎯 <span id="hud-mission-text">採掘で稼ごう</span>
+        </div>
+        <div style="background:linear-gradient(135deg,#1f3a68,#5a3e7a); border:2px solid #ffd700; border-radius:6px; padding:4px 10px; color:#fff; font-weight:900; font-size:11px; flex-shrink:0; white-space:nowrap;">
+          <span id="hud-mode-badge" style="background:#3a7a4a; color:#fff; padding:1px 5px; margin-right:4px; border:1px solid #ffd700; font-size:9px; border-radius:3px;">👨‍👩‍👧 個人</span>
+          👤 <span id="hud-personal-label">どうじま個人</span>: <span style="color:#ffd700;">$<span id="hud-personal-usdt">0</span></span>
+          <span id="hud-company-badge" style="margin-left:4px; font-size:9px; display:none; background:#ffd700; color:#000; padding:1px 4px; border-radius:3px;">🏢 社長</span>
+        </div>
       </div>
-      <!-- 🎯 次のミッションヒント -->
-      <div id="hud-mission-hint" style="background:linear-gradient(90deg,#3a7a4a,#5a3e7a); border:2px solid #ffd700; padding:4px 10px; color:#fff; font-weight:900; font-size:11px; text-align:center;">
-        🎯 <span id="hud-mission-text">採掘で稼ごう</span>
+      <!-- 右側：ランクHUD + アクションボタン群 -->
+      <div style="display:flex; gap:6px; align-items:center;">
+        <!-- 🏅 ランクHUD（コンパクト版） -->
+        <div class="rank-hud" style="background:linear-gradient(135deg,#1a1a1a,#2a2a4a); border:2px solid #ffd700; border-radius:6px; padding:4px 10px; color:#fff; font-weight:900; font-size:11px; min-width:160px;"></div>
+        <!-- アクションボタン（音量・ウォレット・会社詳細）をまとめる統合カード -->
+        <div id="hud-action-buttons" style="display:flex; gap:4px; align-items:center; padding:3px; background:rgba(0,0,0,0.4); border:2px solid #555; border-radius:8px;"></div>
       </div>
-      <div style="background:linear-gradient(135deg,#1f3a68,#5a3e7a); border:2px solid #ffd700; padding:4px 10px; color:#fff; font-weight:900; font-size:11px;">
-        <span id="hud-mode-badge" style="background:#3a7a4a; color:#fff; padding:1px 5px; margin-right:4px; border:1px solid #ffd700; font-size:9px;">👨‍👩‍👧 個人</span>
-        👤 <span id="hud-personal-label">どうじま個人</span>: <span style="color:#ffd700;">$<span id="hud-personal-usdt">0</span></span>
-        <span id="hud-company-badge" style="margin-left:4px; font-size:9px; display:none; background:#ffd700; color:#000; padding:1px 4px;">🏢 社長</span>
-      </div>
-      <!-- 🏅 採掘中のランク表示（コンパクト版） -->
-      <div class="rank-hud" style="background:linear-gradient(135deg,#1a1a1a,#2a2a4a); border:2px solid #ffd700; padding:4px 10px; color:#fff; font-weight:900; font-size:11px; min-width:160px;"></div>
-      <!-- 🎯 HUD横アクションボタンコンテナ（音量・ウォレット・会社詳細） -->
-      <div id="hud-action-buttons" style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;"></div>
     </div>
 
     <div class="game-main">
@@ -15209,25 +15216,72 @@ window.addEventListener('load', () => {
       const el = document.getElementById(id);
       if (el && gameEl && el.parentNode !== gameEl) gameEl.appendChild(el);
     });
-    // ボタン類は HUD のアクションコンテナに移動
+    // ボタン類は HUD のアクションコンテナに移動（モダンなアイコン中心デザインに刷新）
     const hudBtnContainer = document.getElementById('hud-action-buttons');
     if (hudBtnContainer) {
       const soundBtn = document.getElementById('sound-btn');
       const walletBtn = document.querySelector('.wallet-btn');
       const companyBtn = document.getElementById('company-panel-btn');
+
+      // 🎨 統一スタイル：丸み・シャドウ・コンパクトアイコン中心
+      const baseStyle = `
+        position: relative !important;
+        top: auto !important; right: auto !important; left: auto !important;
+        z-index: 2;
+        padding: 6px 10px !important;
+        font-size: 10px !important;
+        border: 2px solid #1a1a1a !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 0 rgba(0,0,0,0.4) !important;
+        display: flex !important;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        transition: transform 0.08s, box-shadow 0.08s;
+        min-height: 32px;
+      `;
       [soundBtn, walletBtn, companyBtn].forEach(btn => {
         if (!btn) return;
-        // 絶対位置解除 → HUD内でインライン表示
-        btn.style.position = 'relative';
-        btn.style.top = 'auto';
-        btn.style.right = 'auto';
-        btn.style.left = 'auto';
-        btn.style.zIndex = '2';
-        btn.style.padding = '4px 8px';
-        btn.style.fontSize = '10px';
-        btn.style.boxShadow = '2px 2px 0 #000';
+        btn.setAttribute('style', btn.getAttribute('style') ? btn.getAttribute('style') + ';' + baseStyle : baseStyle);
+        // ホバー/タップ時のフィードバック
+        btn.addEventListener('mousedown', () => { btn.style.transform = 'translateY(2px)'; btn.style.boxShadow = '0 0 0 rgba(0,0,0,0.4)'; });
+        btn.addEventListener('mouseup', () => { btn.style.transform = ''; btn.style.boxShadow = '0 2px 0 rgba(0,0,0,0.4)'; });
+        btn.addEventListener('mouseleave', () => { btn.style.transform = ''; btn.style.boxShadow = '0 2px 0 rgba(0,0,0,0.4)'; });
         hudBtnContainer.appendChild(btn);
       });
+
+      // 🎨 ボタン中身もアイコン中心に縮小
+      // 音量ボタン：「🔊」だけにする
+      if (soundBtn) {
+        const txt = soundBtn.querySelector('span:not(#sound-btn-icon)');
+        if (txt) txt.style.display = 'none';
+      }
+      // ウォレットボタン：「🏢 $XX」にコンパクト化
+      if (walletBtn) {
+        const winfo = walletBtn.querySelector('.winfo');
+        if (winfo) {
+          // ラベル隠して、$残高だけ
+          const labelDiv = winfo.querySelector('div:first-child');
+          if (labelDiv) labelDiv.style.display = 'none';
+          const v = winfo.querySelector('.v');
+          if (v) v.style.fontSize = '11px';
+        }
+        const wfox = walletBtn.querySelector('.wfox');
+        if (wfox) wfox.style.fontSize = '16px';
+      }
+      // 会社詳細ボタン：「🏢 $XX」にコンパクト化
+      if (companyBtn) {
+        const innerDiv = companyBtn.querySelector('div[style*="font-size:9px"]');
+        if (innerDiv) {
+          // 「会社詳細」テキストを削除、$だけ残す
+          const labelChild = innerDiv.querySelector('div:first-child');
+          if (labelChild) labelChild.style.display = 'none';
+          const v = innerDiv.querySelector('.v');
+          if (v) v.style.fontSize = '11px';
+        }
+        const iconDiv = companyBtn.querySelector('div[style*="font-size:22px"]');
+        if (iconDiv) iconDiv.style.fontSize = '16px';
+      }
     }
   } catch(_){}
   try { migrateLegacySave(); } catch(e) {}
