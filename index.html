@@ -4633,21 +4633,24 @@
     <div class="game-main">
       <!-- 左サイド -->
       <div class="side">
-        <!-- 🏢 会社ランクパネル（主人公アバターの上に表示・モード別） -->
-        <div id="side-company-rank" style="display:block; background:linear-gradient(135deg,#1a1a2e,#2a2a4a); border:2px solid #ffd700; border-radius:8px; padding:7px 9px; margin:0 0 4px 0; color:#fff; font-weight:900; box-shadow:0 2px 0 rgba(0,0,0,0.5), inset 0 0 10px rgba(255,215,0,0.18);">
-          <div style="font-size:8px; letter-spacing:1.5px; color:#ffd700; opacity:0.9; margin-bottom:2px; text-align:center;">🏢 COMPANY</div>
-          <div id="side-company-rank-inner" style="display:flex; align-items:center; gap:6px;">
-            <div style="flex:1; min-width:0; text-align:center;">
-              <div id="side-company-name" style="font-size:11px; line-height:1.2; color:#fff;">HORUN採掘</div>
-              <div id="side-company-sub" style="font-size:9px; color:#ffd700; margin-top:2px; line-height:1.2;">読み込み中...</div>
+        <!-- 🏢 会社ランク×主人公アバター：一体型ビジネスカード -->
+        <div class="char-box" style="padding:0; overflow:hidden; border:3px solid #1a1a1a;">
+          <!-- 会社ランクリボン（カード上部・金色の名刺ヘッダー） -->
+          <div id="side-company-rank" style="background:linear-gradient(135deg,#b8860b 0%, #ffd700 50%, #b8860b 100%); padding:5px 8px 6px 8px; border-bottom:2px solid #1a1a1a; text-align:center;">
+            <div style="font-size:7px; letter-spacing:2.5px; color:#1a1a1a; font-weight:900; opacity:0.75; margin-bottom:1px;">◆ COMPANY ◆</div>
+            <div id="side-company-rank-inner">
+              <div id="side-company-name" style="font-size:11px; line-height:1.15; color:#1a1a1a; font-weight:900; text-shadow:0 1px 0 rgba(255,255,255,0.3);">HORUN採掘</div>
+              <div id="side-company-sub" style="font-size:8.5px; color:#3a2a0a; margin-top:1px; line-height:1.2; font-weight:700;">読み込み中...</div>
             </div>
           </div>
-        </div>
-        <div class="char-box">
-          <div class="name" id="char-player-name">堂島 太郎</div>
-          <div id="char-company-status" style="font-size:9px; font-weight:900; color:#fff; background:#1f3a68; padding:2px 4px; margin:2px 0; letter-spacing:1px;">🏢 HORUN採掘 社員</div>
-          <svg width="70" height="100" id="char-portrait"><use href="#dojima" id="portrait-use"/></svg>
-          <div id="char-avatar-overlay" style="display:none; margin-top:-100px; position:relative; pointer-events:none;"></div>
+          <!-- 主人公本体 -->
+          <div style="padding:4px; text-align:center;">
+            <div class="name" id="char-player-name">堂島 太郎</div>
+            <!-- 旧会社ステータス：上のゴールドリボンに統合したので非表示 -->
+            <div id="char-company-status" style="display:none; font-size:9px; font-weight:900; color:#fff; background:#1f3a68; padding:2px 4px; margin:2px 0; letter-spacing:1px;">🏢 HORUN採掘 社員</div>
+            <svg width="70" height="100" id="char-portrait"><use href="#dojima" id="portrait-use"/></svg>
+            <div id="char-avatar-overlay" style="display:none; margin-top:-100px; position:relative; pointer-events:none;"></div>
+          </div>
         </div>
         <div class="char-box mini personal-only" id="char-horun">
           <svg width="36" height="48"><use id="horun-use" href="#horun"/></svg>
@@ -8498,37 +8501,36 @@ function showRankUpCelebration(rank) {
   document.head.appendChild(s);
 })();
 
-// 🏢 左サイド：いんぐちゃん上の会社ランクパネル
+// 🏢 左サイド：主人公アバター上の会社ランクリボン
+//    char-box 一体型の金色名刺ヘッダー
 function updateSideCompanyRank() {
   const wrap = document.getElementById('side-company-rank');
   if (!wrap) return;
   const nameEl = document.getElementById('side-company-name');
   const subEl = document.getElementById('side-company-sub');
-  const innerEl = document.getElementById('side-company-rank-inner');
-  if (!nameEl || !subEl || !innerEl) return;
+  if (!nameEl || !subEl) return;
   const isRanking = state && state.gameMode === 'ranking';
   if (isRanking && state.company) {
-    // ランキングモード：自社の会社情報
+    // ランキングモード：自社
     const office = getOfficeInfo(state.company.officeLevel || 1);
     const empCount = (state.company.employees || []).length;
-    const cName = state.company.name || (state.playerName ? state.playerName + '採掘' : '自社');
-    nameEl.innerHTML = '<span style="color:#ffd700;">🏢</span> ' + cName;
-    subEl.innerHTML = office.name + '（Lv.' + office.lv + '）／ 社員 ' + empCount + '/' + office.capacity + '人';
-    wrap.style.borderColor = '#ffd700';
-    wrap.style.background = 'linear-gradient(135deg,#1a1a2e,#2a2a4a)';
-    // アイコン消す（中身で別途 🏢 入れたので）
-    innerEl.firstElementChild && (innerEl.firstElementChild.style.display = 'none');
+    const cName = state.company.name || (state.playerName ? state.playerName + 'マイニング' : '自社');
+    nameEl.innerHTML = '🏢 ' + cName;
+    subEl.innerHTML = office.name + ' Lv.' + office.lv + ' ／ 社員 ' + empCount + '/' + office.capacity + '人';
+    // 金色ヘッダー（自社は黄金）
+    wrap.style.background = 'linear-gradient(135deg,#b8860b 0%, #ffd700 50%, #b8860b 100%)';
   } else {
-    // 個人モード：所属企業（HORUN採掘 or 独立後の自社）
+    // 個人モード
     const isOwn = state && state.personal && state.personal.hasCompany;
     const cName = isOwn ? (state.personal.companyName || '自社') : 'HORUN採掘';
     const role = isOwn ? '社長' : '社員';
-    const cur = getCurrentRank ? getCurrentRank() : { lv: 1, name: '見習い鉱夫' };
-    nameEl.innerHTML = '<span style="color:#ffd700;">🏢</span> ' + cName + '<span style="color:#aaa; font-weight:700; font-size:9px;"> ' + role + '</span>';
+    const cur = (typeof getCurrentRank === 'function') ? getCurrentRank() : { lv: 1, name: '見習い鉱夫' };
+    nameEl.innerHTML = '🏢 ' + cName + ' <span style="font-size:9px; font-weight:800; opacity:0.75;">／' + role + '</span>';
     subEl.innerHTML = '採掘ランク Lv.' + cur.lv + ' ' + cur.name;
-    wrap.style.borderColor = isOwn ? '#ffd700' : '#5a8ad6';
-    wrap.style.background = isOwn ? 'linear-gradient(135deg,#3a2a14,#5a4020)' : 'linear-gradient(135deg,#1a2a4a,#2a3a6a)';
-    innerEl.firstElementChild && (innerEl.firstElementChild.style.display = 'none');
+    // 独立後は金、入社中は青っぽい色
+    wrap.style.background = isOwn
+      ? 'linear-gradient(135deg,#b8860b 0%, #ffd700 50%, #b8860b 100%)'
+      : 'linear-gradient(135deg,#2a4a7a 0%, #5a8ad6 50%, #2a4a7a 100%)';
   }
   wrap.style.display = '';
 }
