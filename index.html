@@ -251,12 +251,21 @@
   .wallet-btn .conn-dot.on { background: #7ae890; box-shadow: 0 0 6px #7ae890; }
 
   .wallet-modal {
-    position: fixed; top: 60px; right: 10px;
+    /* 🖥️ PCでスクロールできない問題対策：
+       - .game は overflow:hidden なので、 vh 基準だと最下部がクリップされホイールが届かない
+       - absolute 位置＆最大高さを .game の高さ(740px)内に収める
+       - overflow-y: auto + overscroll-behavior で内側スクロール確実に */
+    position: absolute; top: 60px; right: 10px;
     background: var(--paper); border: 4px solid var(--ink);
-    z-index: 9100; width: 380px; max-width: 92vw;
+    z-index: 9100; width: 380px; max-width: 92%;
     box-shadow: 8px 8px 0 #000;
     display: none; font-size: 13px;
-    max-height: 80vh; overflow-y: auto;
+    max-height: 660px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  @media (max-width: 900px) {
+    .wallet-modal { max-height: min(80vh, 660px); }
   }
   .wallet-modal.open { display: block; animation: walletpop 0.2s ease-out; }
   @keyframes walletpop {
