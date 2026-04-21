@@ -1921,9 +1921,12 @@
   .tutorial-box {
     background: #fff; border: 5px solid #1a1a1a;
     max-width: 500px; width: 100%;
+    max-height: 90vh;
     padding: 24px; text-align: center;
     box-shadow: 8px 8px 0 #b8860b;
     animation: bounceIn 0.4s cubic-bezier(0.5, 0, 0.3, 1.4);
+    display: flex; flex-direction: column;
+    overflow: hidden; /* 内側スクロールに委譲 */
   }
   .tutorial-step {
     background: #1a1a1a; color: #ffd700;
@@ -1944,11 +1947,17 @@
     background: #fff8e6; border: 2px solid #1a1a1a;
     padding: 14px; margin: 12px 0;
     text-align: left;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    min-height: 0;
   }
   .tutorial-text strong { color: #b93a3a; }
   .tutorial-nav {
     display: flex; gap: 10px; justify-content: center;
     margin-top: 16px; flex-wrap: wrap;
+    flex-shrink: 0; /* ナビ常に表示 */
   }
   .tutorial-nav button {
     padding: 10px 20px; font-size: 14px; font-weight: 900;
