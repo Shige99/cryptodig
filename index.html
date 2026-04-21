@@ -4250,6 +4250,44 @@
         <button class="sound-test-btn" style="background:#b8860b;color:#fff;" onclick="SE.play('news_bad')">☁️ 絶望</button>
         <button class="sound-test-btn" style="background:#b93a3a;color:#fff;" onclick="SE.play('news_terrible')">💀 大絶望</button>
       </div>
+
+      <!-- 🎵 マイBGMプレイヤー（MP3読み込み） -->
+      <div style="margin-top:14px; padding-top:10px; border-top:2px dashed #b8860b;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-weight:900; font-size:12px; color:#5a3e7a;">🎵 マイBGMプレイヤー</div>
+          <label style="background:#5a3e7a; color:#fff; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:900;">
+            ＋ MP3を追加
+            <input type="file" id="bgm-file-input" accept="audio/*" multiple style="display:none;" onchange="addMyBgmFiles(event)">
+          </label>
+        </div>
+
+        <!-- 現在再生中の表示 -->
+        <div id="bgm-now-playing" style="background:linear-gradient(90deg,#2a2a4a,#5a3e7a); color:#ffd700; padding:6px 10px; border:2px solid #1a1a1a; border-radius:4px; font-size:11px; font-weight:900; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+          <span style="font-size:14px;">♪</span>
+          <span id="bgm-now-playing-title" style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">トラック未選択</span>
+        </div>
+
+        <!-- 再生コントロール -->
+        <div style="display:flex; gap:4px; margin-bottom:8px; align-items:center;">
+          <button onclick="myBgmPrev()" style="flex:1; background:#1f3a68; color:#fff; border:2px solid #1a1a1a; padding:5px; font-weight:900; cursor:pointer; border-radius:4px;">⏮ 前</button>
+          <button id="bgm-playpause-btn" onclick="myBgmTogglePlay()" style="flex:2; background:#3a7a4a; color:#fff; border:2px solid #1a1a1a; padding:5px; font-weight:900; cursor:pointer; border-radius:4px; font-size:13px;">▶ 再生</button>
+          <button onclick="myBgmNext()" style="flex:1; background:#1f3a68; color:#fff; border:2px solid #1a1a1a; padding:5px; font-weight:900; cursor:pointer; border-radius:4px;">次 ⏭</button>
+          <button id="bgm-loop-btn" onclick="myBgmToggleLoop()" title="リピート" style="background:#888; color:#fff; border:2px solid #1a1a1a; padding:5px 8px; font-weight:900; cursor:pointer; border-radius:4px;">🔁</button>
+          <button id="bgm-shuffle-btn" onclick="myBgmToggleShuffle()" title="シャッフル" style="background:#888; color:#fff; border:2px solid #1a1a1a; padding:5px 8px; font-weight:900; cursor:pointer; border-radius:4px;">🔀</button>
+        </div>
+
+        <!-- プレイリスト -->
+        <div id="bgm-playlist" style="background:#fff; border:2px solid #1a1a1a; border-radius:4px; max-height:140px; overflow-y:auto; font-size:11px;">
+          <div style="padding:10px; color:#888; text-align:center; font-size:10px;">＋ MP3を追加 から曲をインポートしてね</div>
+        </div>
+        <div style="font-size:9px; color:#666; margin-top:5px; line-height:1.3;">
+          ※ 選んだMP3はブラウザ内で再生。リロードするとリセット（プライバシー保護）。<br>
+          ※ 再生中はゲームBGMはミュートされるよ。
+        </div>
+
+        <!-- 隠しaudio要素 -->
+        <audio id="bgm-audio-el" style="display:none;"></audio>
+      </div>
     </div>
   </div>
 </div>
@@ -6353,8 +6391,12 @@ function showScreen(id) {
       'screen-bankruptcy': 'life',
     };
     const track = bgmMap[id];
-    if (track) BGM.play(track);
-    else BGM.stop();
+    // 🎵 マイBGMが再生中なら、ゲーム内蔵BGMの自動切り替えはスキップ（ユーザー優先）
+    const myBgmPlaying = (typeof MyBgm !== 'undefined') && MyBgm.isPlaying;
+    if (!myBgmPlaying) {
+      if (track) BGM.play(track);
+      else BGM.stop();
+    }
   } catch(e) {}
 }
 function backToTitle() {
@@ -16973,6 +17015,222 @@ class BGMPlayer {
 const SE = new SoundEngine();
 const BGM = new BGMPlayer(SE);
 
+// ============================================================
+// 🎵 マイBGMプレイヤー（ユーザーが選んだMP3を再生）
+//    - 複数MP3をアップロードしてプレイリスト化
+//    - 再生中はゲーム内蔵BGMを自動ミュート
+// ============================================================
+const MyBgm = {
+  playlist: [],       // [{ id, name, url (blob:), size }]
+  currentIndex: -1,
+  isPlaying: false,
+  loop: true,         // デフォルト：連続再生（プレイリスト順）
+  shuffle: false,
+
+  // ファイル追加（ファイル選択ダイアログから）
+  addFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+    files.forEach(f => {
+      if (!f.type.startsWith('audio/')) return;
+      const url = URL.createObjectURL(f);
+      this.playlist.push({
+        id: 'my_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        name: f.name.replace(/\.[^.]+$/, ''),  // 拡張子除去
+        url,
+        size: f.size,
+      });
+    });
+    this.renderPlaylist();
+    // 最初の追加なら再生ボタンを活性化
+    if (this.currentIndex === -1 && this.playlist.length > 0) {
+      this.currentIndex = 0;
+      this._updateNowPlaying();
+    }
+    try { SE.play('click'); } catch(_){}
+  },
+
+  // プレイリストUI描画
+  renderPlaylist() {
+    const el = document.getElementById('bgm-playlist');
+    if (!el) return;
+    if (this.playlist.length === 0) {
+      el.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:10px;">＋ MP3を追加 から曲をインポートしてね</div>';
+      return;
+    }
+    el.innerHTML = this.playlist.map((t, i) => {
+      const isCurrent = i === this.currentIndex;
+      const bg = isCurrent ? (this.isPlaying ? '#ffd700' : '#ffeaa0') : '#fff';
+      const color = isCurrent ? '#1a1a1a' : '#333';
+      const icon = isCurrent && this.isPlaying ? '▶' : '♪';
+      return `
+        <div style="display:flex; align-items:center; padding:5px 8px; background:${bg}; color:${color}; border-bottom:1px solid #ddd; cursor:pointer; font-weight:${isCurrent ? '900' : '700'};" onclick="MyBgm.playAt(${i})">
+          <span style="width:18px; display:inline-block;">${icon}</span>
+          <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${_escHtml(t.name)}</span>
+          <button onclick="event.stopPropagation(); MyBgm.remove(${i})" style="background:#b93a3a; color:#fff; border:none; border-radius:3px; padding:2px 6px; font-size:10px; cursor:pointer; font-weight:900;">✕</button>
+        </div>
+      `;
+    }).join('');
+  },
+
+  _updateNowPlaying() {
+    const titleEl = document.getElementById('bgm-now-playing-title');
+    const ppBtn = document.getElementById('bgm-playpause-btn');
+    if (this.currentIndex >= 0 && this.playlist[this.currentIndex]) {
+      if (titleEl) titleEl.textContent = this.playlist[this.currentIndex].name;
+    } else {
+      if (titleEl) titleEl.textContent = 'トラック未選択';
+    }
+    if (ppBtn) ppBtn.innerHTML = this.isPlaying ? '⏸ 停止' : '▶ 再生';
+    // ループ・シャッフルボタンのアクティブ色
+    const loopBtn = document.getElementById('bgm-loop-btn');
+    if (loopBtn) loopBtn.style.background = this.loop ? '#ffd700' : '#888';
+    if (loopBtn) loopBtn.style.color = this.loop ? '#1a1a1a' : '#fff';
+    const shBtn = document.getElementById('bgm-shuffle-btn');
+    if (shBtn) shBtn.style.background = this.shuffle ? '#ffd700' : '#888';
+    if (shBtn) shBtn.style.color = this.shuffle ? '#1a1a1a' : '#fff';
+    this.renderPlaylist();
+  },
+
+  // 指定インデックスの曲を再生
+  playAt(i) {
+    if (i < 0 || i >= this.playlist.length) return;
+    this.currentIndex = i;
+    const audio = document.getElementById('bgm-audio-el');
+    if (!audio) return;
+    // ゲームBGMをミュート
+    try { BGM.stop(); } catch(_){}
+    audio.src = this.playlist[i].url;
+    audio.volume = this._getVolume();
+    // 曲終わりで次へ
+    audio.onended = () => this._onTrackEnd();
+    audio.play().then(() => {
+      this.isPlaying = true;
+      this._updateNowPlaying();
+    }).catch(e => {
+      console.warn('MyBgm play error:', e);
+      this.isPlaying = false;
+      this._updateNowPlaying();
+    });
+  },
+
+  togglePlay() {
+    const audio = document.getElementById('bgm-audio-el');
+    if (!audio) return;
+    if (this.currentIndex === -1 && this.playlist.length > 0) this.currentIndex = 0;
+    if (this.currentIndex === -1) return;
+    if (this.isPlaying) {
+      audio.pause();
+      this.isPlaying = false;
+      this._updateNowPlaying();
+    } else {
+      if (!audio.src) {
+        this.playAt(this.currentIndex);
+      } else {
+        audio.volume = this._getVolume();
+        try { BGM.stop(); } catch(_){}
+        audio.play().then(() => {
+          this.isPlaying = true;
+          this._updateNowPlaying();
+        }).catch(() => {});
+      }
+    }
+  },
+
+  prev() {
+    if (this.playlist.length === 0) return;
+    let idx = this.currentIndex - 1;
+    if (idx < 0) idx = this.playlist.length - 1;
+    this.playAt(idx);
+  },
+
+  next() {
+    if (this.playlist.length === 0) return;
+    let idx;
+    if (this.shuffle) {
+      idx = Math.floor(Math.random() * this.playlist.length);
+      if (this.playlist.length > 1 && idx === this.currentIndex) idx = (idx + 1) % this.playlist.length;
+    } else {
+      idx = this.currentIndex + 1;
+      if (idx >= this.playlist.length) idx = 0;
+    }
+    this.playAt(idx);
+  },
+
+  _onTrackEnd() {
+    if (!this.loop && !this.shuffle && this.currentIndex === this.playlist.length - 1) {
+      // 最終曲でループオフ → 停止
+      this.isPlaying = false;
+      this._updateNowPlaying();
+      // ゲームBGM復帰
+      try { if (typeof BGM !== 'undefined' && BGM.play) BGM.play('mining'); } catch(_){}
+      return;
+    }
+    this.next();
+  },
+
+  remove(i) {
+    if (i < 0 || i >= this.playlist.length) return;
+    const removed = this.playlist[i];
+    try { URL.revokeObjectURL(removed.url); } catch(_){}
+    this.playlist.splice(i, 1);
+    if (this.currentIndex === i) {
+      // 再生中の曲を削除
+      const audio = document.getElementById('bgm-audio-el');
+      if (audio) audio.pause();
+      this.isPlaying = false;
+      this.currentIndex = -1;
+    } else if (this.currentIndex > i) {
+      this.currentIndex -= 1;
+    }
+    this._updateNowPlaying();
+  },
+
+  toggleLoop() {
+    this.loop = !this.loop;
+    this._updateNowPlaying();
+    try { SE.play('click'); } catch(_){}
+  },
+
+  toggleShuffle() {
+    this.shuffle = !this.shuffle;
+    this._updateNowPlaying();
+    try { SE.play('click'); } catch(_){}
+  },
+
+  _getVolume() {
+    // SE.settings の bgm と master から最終音量を決定
+    try {
+      const s = SE.settings;
+      if (s.muted) return 0;
+      return Math.max(0, Math.min(1, s.master * s.bgm));
+    } catch(_) { return 0.5; }
+  },
+
+  // 音量スライダーが動いた時の同期
+  syncVolume() {
+    const audio = document.getElementById('bgm-audio-el');
+    if (audio) audio.volume = this._getVolume();
+  },
+};
+
+// ファイル選択ハンドラ
+function addMyBgmFiles(ev) {
+  if (!ev || !ev.target) return;
+  MyBgm.addFiles(ev.target.files);
+  ev.target.value = '';  // 同じファイル再選択可に
+}
+function myBgmTogglePlay() { MyBgm.togglePlay(); }
+function myBgmPrev()       { MyBgm.prev(); }
+function myBgmNext()       { MyBgm.next(); }
+function myBgmToggleLoop() { MyBgm.toggleLoop(); }
+function myBgmToggleShuffle() { MyBgm.toggleShuffle(); }
+
+// HTMLエスケープユーティリティ（万が一ない時のフォールバック）
+function _escHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // SoundEngine.init 完了後に保留中BGMがあれば再生
 const _origInit = SoundEngine.prototype.init;
 SoundEngine.prototype.init = function() {
@@ -17039,6 +17297,8 @@ function onSoundSlider(which, val) {
   SE.setVolume(which, v);
   const label = document.getElementById('snd-' + which + '-val');
   if (label) label.textContent = Math.round(v * 100);
+  // 🎵 マイBGM プレイヤーの音量も同期（master/bgm 連動）
+  try { if (typeof MyBgm !== 'undefined') MyBgm.syncVolume(); } catch(_){}
 }
 function toggleSoundMute() {
   SE.init();
@@ -17046,6 +17306,8 @@ function toggleSoundMute() {
   syncSoundUI();
   // ミュート解除時は試聴音を1発鳴らして動作確認
   if (!SE.settings.muted) SE.play('btn_confirm');
+  // 🎵 マイBGM プレイヤーの音量も同期
+  try { if (typeof MyBgm !== 'undefined') MyBgm.syncVolume(); } catch(_){}
 }
 // ページロード時にUIを初期状態同期
 window.addEventListener('DOMContentLoaded', () => {
