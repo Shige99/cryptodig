@@ -4639,12 +4639,12 @@
           <div class="info"><div class="name">はるきち</div><div id="harukichi-msg">いっとこ〜！</div></div>
         </div>
         <!-- 🏢 会社ランクパネル（いんぐちゃんの上に表示・モード別） -->
-        <div id="side-company-rank" style="background:linear-gradient(135deg,#1a1a2e,#2a2a4a); border:2px solid #ffd700; border-radius:8px; padding:6px 8px; margin-bottom:6px; color:#fff; font-weight:900; font-size:10px; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
+        <div id="side-company-rank" style="display:block; background:linear-gradient(135deg,#1a1a2e,#2a2a4a); border:2px solid #ffd700; border-radius:8px; padding:7px 9px; margin:2px 0 6px 0; color:#fff; font-weight:900; box-shadow:0 2px 0 rgba(0,0,0,0.5), inset 0 0 8px rgba(255,215,0,0.15);">
+          <div style="font-size:8px; letter-spacing:1.5px; color:#ffd700; opacity:0.9; margin-bottom:2px;">🏢 COMPANY</div>
           <div id="side-company-rank-inner" style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:14px;">🏢</span>
             <div style="flex:1; min-width:0;">
-              <div id="side-company-name" style="font-size:11px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">読み込み中...</div>
-              <div id="side-company-sub" style="font-size:9px; color:#ffd700; margin-top:1px;">—</div>
+              <div id="side-company-name" style="font-size:11px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff;">HORUN採掘</div>
+              <div id="side-company-sub" style="font-size:9px; color:#ffd700; margin-top:1px;">読み込み中...</div>
             </div>
           </div>
         </div>
@@ -6278,6 +6278,8 @@ function showScreen(id) {
   }
   // 🏅 ランクHUDを全画面で自動更新
   try { updateRankHud(); } catch(e) {}
+  // 🏢 いんぐちゃん上の会社ランクパネルも画面切替時に更新（updateAllHUD未呼出時のフォールバック）
+  try { if (typeof updateSideCompanyRank === 'function') updateSideCompanyRank(); } catch(e) {}
   // 🎨 アバター表示を各画面で同期
   try { refreshAvatarDisplays(); } catch(e) {}
   // 🎵 BGM切り替え（画面ごとに対応トラック再生）
