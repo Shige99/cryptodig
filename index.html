@@ -1911,6 +1911,69 @@
   }
 
   /* チュートリアル オーバーレイ */
+  /* 🗨️ 社員のフローティング吹き出し（採掘画面に漂う） */
+  .staff-bubble-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 180;
+  }
+  .staff-bubble {
+    position: absolute;
+    background: #fff;
+    border: 3px solid #1a1a1a;
+    border-radius: 12px;
+    padding: 6px 10px 6px 6px;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    max-width: 260px;
+    min-width: 120px;
+    font-size: 11px;
+    color: #1a1a1a;
+    line-height: 1.3;
+    animation: staffBubbleIn 0.4s ease-out, staffBubbleOut 0.5s ease-in forwards;
+    animation-delay: 0s, 6.5s;
+    pointer-events: auto;
+    cursor: default;
+  }
+  .staff-bubble::after {
+    content: ''; position: absolute; bottom: -12px; left: 20px;
+    border: 7px solid transparent; border-top-color: #1a1a1a; border-bottom: 0;
+  }
+  .staff-bubble::before {
+    content: ''; position: absolute; bottom: -8px; left: 22px;
+    border: 5px solid transparent; border-top-color: #fff; border-bottom: 0; z-index: 1;
+  }
+  .staff-bubble .sb-avatar {
+    width: 34px; height: 34px; flex-shrink: 0;
+    border: 2px solid #1a1a1a; border-radius: 50%; overflow: hidden;
+    background: #eee;
+  }
+  .staff-bubble .sb-content { flex: 1; min-width: 0; }
+  .staff-bubble .sb-name {
+    font-size: 10px; font-weight: 900;
+    color: #5a3e7a; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 1px;
+  }
+  .staff-bubble .sb-name .sb-rank {
+    background: #1a1a1a; color: #ffd700;
+    padding: 0 5px; margin-right: 4px;
+    font-size: 9px; border-radius: 3px;
+  }
+  .staff-bubble .sb-msg { font-size: 11px; color: #1a1a1a; }
+  @keyframes staffBubbleIn {
+    from { transform: translateY(18px) scale(0.7); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes staffBubbleOut {
+    from { transform: translateY(0) scale(1); opacity: 1; }
+    to   { transform: translateY(-20px) scale(0.85); opacity: 0; }
+  }
+
   .tutorial-overlay {
     position: fixed; inset: 0;
     background: rgba(0, 0, 0, 0.85);
@@ -4746,7 +4809,11 @@
         </div>
         <!-- 🏢 会社ブーストバナー（ランキングモードのみ表示、現在の採掘ボーナス可視化） -->
         <div id="company-boost-banner" class="ranking-only" style="display:none; background:linear-gradient(90deg,#1a1a1a,#2a2a4a); border:2px solid #ffd700; padding:6px 8px; color:#fff; font-size:10px; font-weight:900; box-shadow:3px 3px 0 #000;"></div>
-        <!-- 🏢 会社経営編：社員リスト（ランキングモードのみ表示） -->
+        <!-- 🧑‍💼 社員サマリー（コンパクト：人数・ランク分布・採用ボタン） -->
+        <div id="char-employees-summary" class="ranking-only" style="display:none; background:linear-gradient(135deg,#2a1a3e,#1f3a68); border:2px solid #ffd700; border-radius:6px; padding:8px; color:#fff; font-size:10px; box-shadow:0 2px 0 rgba(0,0,0,0.4);">
+          <!-- JSで描画 -->
+        </div>
+        <!-- 🏢 旧の社員リスト：吹き出し方式に置き換えたので非表示維持（互換のため残置） -->
         <div id="char-employees-container" class="ranking-only" style="display:none; flex-direction:column; gap:4px;"></div>
 
         <div class="msg-box" id="msg">岩をクリックで採掘！ライバルより先に宝石を掘り当てるんや！</div>
@@ -8681,21 +8748,31 @@ function updateRankHud() {
       return;
     }
     el.style.display = '';
-    // 🏢 ランキングモード：オフィス情報＋採掘ランクのセットで見せる
+    // 🏢 ランキングモード：会社ランク（オフィスLv）＋ 次の昇格までの資金進捗
     if (state?.gameMode === 'ranking' && state?.company) {
       const office = getOfficeInfo(state.company.officeLevel || 1);
       const empCount = (state.company.employees || []).length;
-      // 🏆 鉱山解放レベル：現ランクLv数値のみ（「鉱夫」等の個人モード系文言は排除）
+      const nextOffice = COMPANY_OFFICE_LEVELS.find(o => o.lv === office.lv + 1);
+      const usdt = state.usdt || 0;
+      const officeProgress = nextOffice
+        ? Math.min(1, usdt / nextOffice.upgradeCost)
+        : 1;
+      const officeProgressText = nextOffice
+        ? `$${usdt.toFixed(0)} / $${nextOffice.upgradeCost.toLocaleString()}（${nextOffice.name}まで）`
+        : '🏆 最高位オフィス達成！';
+      const barColor = (nextOffice && usdt >= nextOffice.upgradeCost)
+        ? 'linear-gradient(90deg, #7ae890, #3a7a4a)'  // 緑 = 昇格可能
+        : 'linear-gradient(90deg, #ffd700, #ff6b3d)'; // 金 = 積立中
       el.innerHTML = `
         <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:900;">
           <span style="font-size:14px;">🏢</span>
-          <span>${office.name}（Lv.${office.lv}）／ 社員${empCount}人</span>
+          <span>${office.name}（Lv.${office.lv}）／ 社員${empCount}/${office.capacity}人</span>
         </div>
         <div style="height:6px; background:#222; border:1px solid #ffd700; margin-top:3px; position:relative;">
-          <div style="height:100%; width:${(progressRatio * 100).toFixed(1)}%; background:linear-gradient(90deg, #ffd700, #ff6b3d);"></div>
+          <div style="height:100%; width:${(officeProgress * 100).toFixed(1)}%; background:${barColor};"></div>
         </div>
         <div style="font-size:9px; color:#ccc; letter-spacing:0.5px; margin-top:2px;">
-          鉱山解放 <span style="color:#ffd700;">Lv.${cur.lv}</span>／ ${progressText}
+          💰 ${officeProgressText}
         </div>
       `;
     } else {
@@ -10338,17 +10415,25 @@ function goResult() {
       }));
   }
 
-  // === どうじまくん個人インセンティブ: 採掘売上DJMの20%をUSDT換算 → 源泉徴収20% ===
+  // === 個人インセンティブ: 採掘売上DJMの20%をUSDT換算 → 源泉徴収20% ===
+  //    個人モード（HORUN社員）のみ。ランキングモード（自社社長）は会社に100%残す
   const binance = state.markets.binance;
-  const incentiveDjm = Math.floor(game.coins * 0.20);
-  const incentiveUsdtGross = incentiveDjm * binance.djmPrice;
-  const incentiveUsdt = applyTax(incentiveUsdtGross, '採掘所得');
-  state.personal.usdt += incentiveUsdt;
-  snapshotWealth('mining', incentiveUsdt, `採掘所得 (税後 +$${incentiveUsdt.toFixed(2)})`);
-  // 会社のDJMから個人インセンティブ分を差し引く
-  state.djm = Math.max(0, state.djm - incentiveDjm);
+  let incentiveDjm = 0;
+  let incentiveUsdt = 0;
+  if (state.gameMode !== 'ranking') {
+    incentiveDjm = Math.floor(game.coins * 0.20);
+    const incentiveUsdtGross = incentiveDjm * binance.djmPrice;
+    incentiveUsdt = applyTax(incentiveUsdtGross, '採掘所得');
+    state.personal.usdt += incentiveUsdt;
+    snapshotWealth('mining', incentiveUsdt, `採掘所得 (税後 +$${incentiveUsdt.toFixed(2)})`);
+    // 会社のDJMから個人インセンティブ分を差し引く
+    state.djm = Math.max(0, state.djm - incentiveDjm);
+  } else {
+    // ランキングモード：100%会社のまま（差し引きなし、個人への振込なし）
+    snapshotWealth('mining', 0, `🏢 会社採掘収益 ${game.coins} DJM（社長への個人振込は毎朝の役員報酬のみ）`);
+  }
 
-  // 不動産系の資産から日次収入も加算
+  // 不動産系の資産から日次収入も加算（個人所有なので個人に入る）
   let passiveIncome = 0;
   state.personal.assets.forEach(a => {
     if (a.monthly) passiveIncome += a.monthly;
@@ -11019,20 +11104,15 @@ function updateAllHUD() {
   if (itemSection) itemSection.style.display = isRanking ? 'none' : '';
   const shopItemsTab = document.getElementById('tab-btn-items');
   if (shopItemsTab) shopItemsTab.style.display = isRanking ? 'none' : '';
-  // 🧑‍💼 ランキングモード：左枠の社員パネル表示/非表示だけ切替
-  //    （全再描画は重く、台詞も毎回変わってしまうのでここでは行わない）
+  // 🧑‍💼 ランキングモード：社員サマリー更新＆吹き出しローテ起動
   try {
-    const empContainer = document.getElementById('char-employees-container');
-    if (empContainer) {
-      if (isRanking) {
-        // 中身が空なら初期描画
-        if (empContainer.childElementCount === 0) renderLeftSideEmployees();
-        empContainer.style.display = 'flex';
-        startStaffQuoteRotation();
-      } else {
-        empContainer.style.display = 'none';
-        stopStaffQuoteRotation();
-      }
+    if (isRanking) {
+      renderEmployeesSummary();
+      startStaffQuoteRotation();
+    } else {
+      const summaryEl = document.getElementById('char-employees-summary');
+      if (summaryEl) { summaryEl.style.display = 'none'; summaryEl.innerHTML = ''; }
+      stopStaffQuoteRotation();
     }
     // 🏢 会社ブーストバナーを更新（現在の採掘DJM・速度ボーナスを可視化）
     renderCompanyBoostBanner();
@@ -14146,98 +14226,122 @@ function _buildSpeakerCard(employee, slotId) {
 }
 
 function renderLeftSideEmployees() {
+  // 🔄 旧ロジック：側面パネルに最大4人カード表示 → 吹き出し方式に変更したので常に空
   const container = document.getElementById('char-employees-container');
-  if (!container) return;
-  if (state?.gameMode !== 'ranking' || !state?.company || !Array.isArray(state.company.employees)) {
-    container.style.display = 'none';
-    container.innerHTML = '';
-    _activeSpeakers = [];
+  if (container) { container.style.display = 'none'; container.innerHTML = ''; }
+  _activeSpeakers = [];
+  // 代わりに社員サマリー（コンパクト表示）を描画
+  try { renderEmployeesSummary(); } catch(_){}
+}
+
+// 🧑‍💼 社員サマリー（コンパクト版）：人数・採用/管理ボタン
+function renderEmployeesSummary() {
+  const el = document.getElementById('char-employees-summary');
+  if (!el) return;
+  if (state?.gameMode !== 'ranking' || !state?.company) {
+    el.style.display = 'none'; el.innerHTML = '';
     return;
   }
   try { initializeCompanyIfNeeded(); } catch(_){}
-  const employees = state.company.employees;
-  if (employees.length === 0) {
-    container.style.display = 'none';
-    container.innerHTML = '';
-    _activeSpeakers = [];
-    return;
-  }
-  container.style.display = 'flex';
-
-  // 初期表示：ランク上位 MAX_LEFT_SPEAKERS 人を優先（非欠勤優先）
-  const pool = employees.filter(e => e.todayStatus !== 'absent');
-  const initialPool = pool.length >= MAX_LEFT_SPEAKERS ? pool : employees;
-  // ランク降順でソート → 上位を初期スロットに
-  const sorted = sortEmployeesByRank(initialPool);
-  const initial = sorted.slice(0, Math.min(MAX_LEFT_SPEAKERS, sorted.length));
-  _activeSpeakers = initial.map((e, i) => ({ empId: e.id, slotId: `staff-slot-${i}` }));
-  container.innerHTML = _activeSpeakers.map(s => {
-    const e = employees.find(x => x.id === s.empId);
-    return e ? _buildSpeakerCard(e, s.slotId) : '';
-  }).join('');
+  const c = state.company;
+  const employees = c.employees || [];
+  const office = getOfficeInfo(c.officeLevel || 1);
+  // ランク別カウント
+  const rankBuckets = { SSS:0, SS:0, S:0, A:0, B:0, C:0, D:0, E:0 };
+  employees.forEach(e => { if (rankBuckets[e.rank] != null) rankBuckets[e.rank]++; });
+  const totalBoosts = calcCompanyBonuses();
+  const djmPct = Math.round((totalBoosts.djmMult - 1) * 100);
+  const spdPct = Math.round((totalBoosts.speedMult - 1) * 100);
+  const rankLine = ['SSS','SS','S','A','B','C','D','E']
+    .filter(r => rankBuckets[r] > 0)
+    .map(r => {
+      const ri = getStaffRankInfo(r);
+      return `<span style="font-weight:900; font-size:9px; color:#fff; background:${ri.grad}; padding:1px 5px; border:1px solid #1a1a1a; margin-right:2px;">${r}×${rankBuckets[r]}</span>`;
+    }).join('');
+  el.style.display = '';
+  el.innerHTML = `
+    <div style="font-size:9px; letter-spacing:1.5px; color:#ffd700; text-align:center; margin-bottom:4px; font-weight:900;">🧑‍💼 STAFF</div>
+    <div style="text-align:center; font-size:12px; font-weight:900; margin-bottom:4px;">
+      ${employees.length} <span style="color:#aaa; font-size:10px;">/ ${office.capacity}</span>
+    </div>
+    <div style="text-align:center; margin-bottom:5px; line-height:1.8;">${rankLine || '<span style="color:#aaa; font-size:9px;">社員なし</span>'}</div>
+    ${(djmPct > 0 || spdPct > 0) ? `
+      <div style="text-align:center; font-size:9px; color:#ffd700; background:rgba(0,0,0,0.3); padding:3px; border-radius:3px; margin-bottom:5px;">
+        ⚡ DJM+${djmPct}% 速度+${spdPct}%
+      </div>
+    ` : ''}
+    <div style="display:flex; gap:3px;">
+      <button onclick="hireNewStaff()" style="flex:1; padding:4px; background:linear-gradient(90deg,#5a3e7a,#ff00aa); color:#fff; font-weight:900; font-size:10px; border:2px solid #1a1a1a; border-radius:4px; cursor:pointer;">🎲 採用</button>
+      <button onclick="toggleCompanyPanel()" style="flex:1; padding:4px; background:#1f3a68; color:#fff; font-weight:900; font-size:10px; border:2px solid #1a1a1a; border-radius:4px; cursor:pointer;">⚙️ 管理</button>
+    </div>
+  `;
 }
 
-// 🔄 社員ローテーション：100人いても順繰りに話題が回る
-//    5〜7秒ごとに1スロットを別社員に入れ替える（フェードアニメで自然に）
+// 🗨️ 採掘画面に社員の吹き出しをフローティング生成
+function spawnStaffBubble(employee, quote) {
+  if (!employee || !quote) return;
+  const mine = document.getElementById('mine');
+  if (!mine) return;
+  // 吹き出し用コンテナを確保
+  let container = mine.querySelector('.staff-bubble-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'staff-bubble-container';
+    mine.appendChild(container);
+  }
+  // 既に3つ以上浮いてたら古いの消す
+  const existing = container.querySelectorAll('.staff-bubble');
+  if (existing.length >= 3) existing[0].remove();
+
+  // 配置位置（mineグリッド内でランダム、端に寄りすぎないよう）
+  const rect = mine.getBoundingClientRect();
+  const bubbleW = 220;
+  const bubbleH = 50;
+  const maxLeft = Math.max(10, rect.width - bubbleW - 10);
+  const maxTop  = Math.max(10, rect.height - bubbleH - 30);
+  const left = 10 + Math.random() * (maxLeft - 10);
+  const top  = 10 + Math.random() * (maxTop - 10);
+
+  const ri = getStaffRankInfo(employee.rank || 'E');
+  const avatarHtml = employee.avatar
+    ? (typeof renderAvatarSVG === 'function' ? renderAvatarSVG(employee.avatar, {size: 30}) : '👤')
+    : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'staff-bubble';
+  bubble.style.left = left + 'px';
+  bubble.style.top  = top + 'px';
+  bubble.innerHTML = `
+    <div class="sb-avatar">${avatarHtml}</div>
+    <div class="sb-content">
+      <div class="sb-name"><span class="sb-rank" style="background:${ri.grad};">${ri.rank}</span>${_escHtml(employee.name || '社員')}</div>
+      <div class="sb-msg">${_escHtml(quote)}</div>
+    </div>
+  `;
+  container.appendChild(bubble);
+  // 7秒後に自動削除
+  setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 7000);
+}
+
+// 🗨️ 社員ローテーション（吹き出し方式）：7〜10秒おきに1〜2人が話す
 let _staffQuoteTimer = null;
 function startStaffQuoteRotation() {
   stopStaffQuoteRotation();
   _staffQuoteTimer = setInterval(() => {
     if (state?.gameMode !== 'ranking') return;
-    const container = document.getElementById('char-employees-container');
-    if (!container || container.style.display === 'none') return;
+    // 採掘画面でのみ吹き出しを出す
+    if (!document.getElementById('screen-game')?.classList.contains('active')) return;
     const employees = state?.company?.employees || [];
     if (employees.length === 0) return;
-
-    // 抽選プール：非欠勤 → 足りなければ全員
+    // 非欠勤優先
     const nonAbsent = employees.filter(e => e.todayStatus !== 'absent');
     const pool = nonAbsent.length > 0 ? nonAbsent : employees;
-
-    // 50%で「同じスロットの台詞だけ更新」、50%で「スロット入替」
-    // こうすることで既存カードも時々発言＋新キャラも時々登場
-    const justUpdateQuote = Math.random() < 0.5 && _activeSpeakers.length > 0;
-
-    if (justUpdateQuote) {
-      // ランダムなスロットの台詞だけ更新
-      const slot = _activeSpeakers[Math.floor(Math.random() * _activeSpeakers.length)];
-      const e = employees.find(x => x.id === slot.empId);
-      if (!e || e.todayStatus === 'absent') return;
-      const msgEl = document.querySelector(`#${slot.slotId} .emp-msg`);
-      if (!msgEl) return;
-      const newQuote = e.todayStatusMsg || (typeof pickStaffQuote === 'function' ? pickStaffQuote(e) : '…');
-      msgEl.style.opacity = '0.2';
-      setTimeout(() => {
-        msgEl.textContent = newQuote;
-        msgEl.style.opacity = '1';
-      }, 120);
-      return;
-    }
-
-    // スロット入替モード：新キャラを1人選んで一番古いスロットと入れ替え
-    const activeIds = new Set(_activeSpeakers.map(s => s.empId));
-    const candidates = pool.filter(e => !activeIds.has(e.id));
-    if (candidates.length === 0) return; // 全員が既にスロットにいる（社員数4人以下時）
-
-    const newcomer = candidates[Math.floor(Math.random() * candidates.length)];
-    // 古いスロットをFIFOで退場
-    const oldSlot = _activeSpeakers.shift();
-    const newSlotId = `staff-slot-${Date.now()}-${Math.floor(Math.random()*1000)}`;
-    _activeSpeakers.push({ empId: newcomer.id, slotId: newSlotId });
-
-    // 退場アニメ → 新キャラ挿入
-    const oldEl = document.getElementById(oldSlot.slotId);
-    if (oldEl) {
-      oldEl.style.animation = 'staffSpeakerOut 0.35s ease forwards';
-      setTimeout(() => {
-        oldEl.remove();
-        // 新キャラを末尾に追加
-        container.insertAdjacentHTML('beforeend', _buildSpeakerCard(newcomer, newSlotId));
-      }, 360);
-    } else {
-      // フォールバック：全再描画
-      container.insertAdjacentHTML('beforeend', _buildSpeakerCard(newcomer, newSlotId));
-    }
-  }, 60000); // 60秒（1分）ごとに回転 — 採掘画面の落ち着いた会話テンポ
+    // ランダムに1人ピック
+    const e = pool[Math.floor(Math.random() * pool.length)];
+    if (!e) return;
+    const quote = e.todayStatusMsg || (typeof pickStaffQuote === 'function' ? pickStaffQuote(e) : '…');
+    try { spawnStaffBubble(e, quote); } catch(err) { console.warn('bubble err', err); }
+  }, 8000); // 8秒ごとに誰かが話す
 }
 function stopStaffQuoteRotation() {
   if (_staffQuoteTimer) { clearInterval(_staffQuoteTimer); _staffQuoteTimer = null; }
