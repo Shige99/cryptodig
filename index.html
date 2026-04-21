@@ -1917,7 +1917,7 @@
     inset: 0;
     pointer-events: none;
     overflow: visible;
-    z-index: 180;
+    z-index: 800; /* 岩・宝石ポップアップ(999)よりは下、マス(1-4)よりは上 */
   }
   .staff-bubble {
     position: absolute;
@@ -1937,7 +1937,7 @@
     animation: staffBubbleIn 0.4s ease-out;
     pointer-events: auto;
     cursor: default;
-    z-index: 190;
+    z-index: 810;
   }
   .staff-bubble.fade-out { animation: staffBubbleOut 0.5s ease-in forwards; }
   .staff-bubble::after {
@@ -5991,7 +5991,25 @@ const TAX_RATE = 0.20;                // 採掘・スロット・株式利益に
 const INFLATION_RATE_DAILY = 0.002;   // 日次インフレ 0.2% → 年7-8%程度
 const BASE_DAILY_LIVING_COST = 12;    // 家族3人の基本生活費 USDT/日（家賃・光熱・食費）
 const EMPLOYEE_DAILY_WAGE = 10;       // HORUN採掘の社員（個人モード独立前）の日給 USDT
-const CEO_DAILY_EXEC_PAY = 20;        // 独立社長（個人モード独立後 or ランキングモード）の役員報酬 USDT/日
+const CEO_DAILY_EXEC_PAY = 20;        // デフォルト（個人モード独立後）の役員報酬 USDT/日
+// 🏢 ランキングモード：オフィスLv連動の役員報酬テーブル
+//    オフィスを昇格させるほど社長の日給もアップ（会社が大きくなれば社長も潤う）
+const CEO_PAY_BY_OFFICE_LV = {
+  1: 20,    // 雑居オフィス
+  2: 50,    // テナントビル
+  3: 120,   // タワーフロア
+  4: 300,   // 自社ビル
+  5: 800,   // グローバル本社
+};
+function getCeoDailyPay() {
+  if (state?.gameMode === 'ranking' && state?.company) {
+    const lv = state.company.officeLevel || 1;
+    return CEO_PAY_BY_OFFICE_LV[lv] || CEO_DAILY_EXEC_PAY;
+  }
+  return CEO_DAILY_EXEC_PAY;
+}
+// 💎 ランキングモード：ダイヤ原石売却は社長個人の取り分あり
+const CEO_DIAMOND_PERSONAL_PCT = 0.50;  // ダイヤ売却の50%を個人が受取（残り50%は会社）
 
 // 🏢 会社経営（ランキングモード）
 const STAFF_DAILY_WAGE = 8;           // 社員1人の日給 USDT（会社の経費、E/Dランク互換フォールバック）
@@ -9265,15 +9283,32 @@ function sellDiamond(idx) {
     try { SE.play('btn_cancel'); } catch(_){}
     return;
   }
+  const isRanking = state.gameMode === 'ranking';
   const isEmployed = !state.personal.hasCompany;
-  const incentivePct = isEmployed ? COMPANY_DIA_INCENTIVE : 1.0;
-  const personalGain = +(d.appraised.valueUsd * incentivePct).toFixed(2);
-  // 個人へインセンティブ
-  state.personal.usdt += personalGain;
-  // 会社員なら会社の取り分は会社USDTに（仮想的にゲーム全体USDTに加算）
-  if (isEmployed) {
-    const companyShare = +(d.appraised.valueUsd * (1 - COMPANY_DIA_INCENTIVE)).toFixed(2);
+  // 💰 ダイヤ原石の売却配分ルール：
+  //   ランキングモード（会社経営編）→ 50%個人（社長の役得）＋50%会社
+  //   個人モード（HORUN社員）       → 20%個人インセンティブ＋80%会社
+  //   個人モード（独立後社長）      → 100%個人（旧挙動）
+  let personalGain = 0, companyShare = 0;
+  if (isRanking) {
+    personalGain = +(d.appraised.valueUsd * CEO_DIAMOND_PERSONAL_PCT).toFixed(2);
+    companyShare = +(d.appraised.valueUsd * (1 - CEO_DIAMOND_PERSONAL_PCT)).toFixed(2);
+    state.personal.usdt += personalGain;
     state.usdt += companyShare;
+  } else if (isEmployed) {
+    personalGain = +(d.appraised.valueUsd * COMPANY_DIA_INCENTIVE).toFixed(2);
+    companyShare = +(d.appraised.valueUsd * (1 - COMPANY_DIA_INCENTIVE)).toFixed(2);
+    state.personal.usdt += personalGain;
+    state.usdt += companyShare;
+  } else {
+    personalGain = +d.appraised.valueUsd.toFixed(2);
+    state.personal.usdt += personalGain;
+  }
+  // 本日の会社売上に加算（結果画面レポート用）
+  if (isRanking) {
+    if (!game) game = {};
+    game.companyGemSalesUsd = (game.companyGemSalesUsd || 0) + companyShare;
+    game.personalDiamondSalesUsd = (game.personalDiamondSalesUsd || 0) + personalGain;
   }
   // 🎵 売却SE：レジの「チン♪」風 + 金額に応じたファンファーレ
   try {
@@ -9287,13 +9322,17 @@ function sellDiamond(idx) {
     else if (v >= 500) setTimeout(() => SE.play('success_medium'), 400);
     else setTimeout(() => SE.play('success_small'), 400);
   } catch(_){}
-  snapshotWealth('mining', personalGain, `💎 ダイヤ売却 +$${personalGain.toFixed(2)} (${d.appraised.grade}級 ${d.caratRaw}ct)`);
+  const totalGain = personalGain + companyShare;
+  snapshotWealth('mining', totalGain, `💎 ダイヤ売却 +$${totalGain.toFixed(2)} (${d.appraised.grade}級 ${d.caratRaw}ct) ${isRanking ? '個人50%+会社50%' : (isEmployed ? '個人20%+会社80%' : '個人')}`);
   // ダイヤを削除
   state.personal.rawDiamonds.splice(idx, 1);
+  const toastDest = isRanking
+    ? `個人+$${personalGain.toFixed(2)} ／ 会社+$${companyShare.toFixed(2)}`
+    : (isEmployed ? `個人+$${personalGain.toFixed(2)} ／ 会社+$${companyShare.toFixed(2)}` : `個人+$${personalGain.toFixed(2)}`);
   showBuyToast(
-    `<div class="ttl">💎 ダイヤ売却完了！</div>
-     <div class="amt">+$${personalGain.toFixed(2)} USDT</div>
-     <div style="font-size:11px; margin-top:6px;">${isEmployed ? '会社員のため20%インセンティブ' : '社長のため100%受取'}</div>`,
+    `<div class="ttl">💎 ダイヤ売却完了！ +$${totalGain.toFixed(2)}</div>
+     <div class="amt" style="font-size:12px;">${toastDest}</div>
+     ${isRanking ? '<div style="font-size:10px; margin-top:4px; color:#ffd700;">✨ ダイヤは社長の役得！50%が個人ウォレットへ</div>' : ''}`,
     '#3a7a4a'
   );
   saveGame();
@@ -9307,13 +9346,23 @@ function sellGemFromCollection(idx) {
   if (!state.personal.rawDiamonds) return;
   const d = state.personal.rawDiamonds[idx];
   if (!d || d.status !== 'gem-collected') return;
+  const isRanking = state.gameMode === 'ranking';
   const isEmployed = !state.personal.hasCompany;
-  const incentivePct = isEmployed ? COMPANY_DIA_INCENTIVE : 1.0;
-  const personalGain = +(d.valueUsd * incentivePct).toFixed(2);
-  state.personal.usdt += personalGain;
-  if (isEmployed) {
-    const companyShare = +(d.valueUsd * (1 - COMPANY_DIA_INCENTIVE)).toFixed(2);
+  // 💰 売却先のルール（sellDiamond と同じ）
+  let personalGain = 0, companyShare = 0;
+  if (isRanking) {
+    companyShare = +d.valueUsd.toFixed(2);
     state.usdt += companyShare;
+    if (!game) game = {};
+    game.companyGemSalesUsd = (game.companyGemSalesUsd || 0) + companyShare;
+  } else if (isEmployed) {
+    personalGain = +(d.valueUsd * COMPANY_DIA_INCENTIVE).toFixed(2);
+    companyShare = +(d.valueUsd * (1 - COMPANY_DIA_INCENTIVE)).toFixed(2);
+    state.personal.usdt += personalGain;
+    state.usdt += companyShare;
+  } else {
+    personalGain = +d.valueUsd.toFixed(2);
+    state.personal.usdt += personalGain;
   }
   // 🎵 宝石売却SE：レジ音 + 金額に応じたグラデSE
   try {
@@ -9326,12 +9375,14 @@ function sellGemFromCollection(idx) {
     else if (v >= 500) setTimeout(() => SE.play('success_medium'), 350);
     else setTimeout(() => SE.play('success_small'), 350);
   } catch(_){}
-  snapshotWealth('mining', personalGain, `💎 ${d.name} 売却 +$${personalGain.toFixed(2)}`);
+  const totalGain = personalGain + companyShare;
+  snapshotWealth('mining', totalGain, `💎 ${d.name} 売却 +$${totalGain.toFixed(2)} ${isRanking ? '→会社' : (isEmployed ? '個人20%+会社80%' : '個人')}`);
   state.personal.rawDiamonds.splice(idx, 1);
+  const toastDest = isRanking ? '会社ウォレット' : (isEmployed ? '個人20%＋会社80%' : '個人ウォレット');
   showBuyToast(
     `<div class="ttl">💎 ${d.name} 売却完了！</div>
-     <div class="amt">+$${personalGain.toFixed(2)} USDT</div>
-     <div style="font-size:11px; margin-top:6px;">${isEmployed ? '会社員のため20%インセンティブ' : '社長のため100%受取'}</div>`,
+     <div class="amt">+$${totalGain.toFixed(2)} USDT</div>
+     <div style="font-size:11px; margin-top:6px;">${toastDest} に入金</div>`,
     '#3a7a4a'
   );
   saveGame();
@@ -10575,12 +10626,18 @@ function renderResultCompanyExpenses() {
   const djmPrice = binance?.djmPrice || 0.005;
   const miningDjm = game?.coins || 0;
   const miningUsdtValue = miningDjm * djmPrice;
+  // 宝石・ダイヤ売却による会社USDT増分（sellDiamond/sellGemFromCollection で積算）
+  const gemSalesUsd = game?.companyGemSalesUsd || 0;
+  // ダイヤ売却の個人取り分（ランキングモードは社長に50%）
+  const personalDiamondUsd = game?.personalDiamondSalesUsd || 0;
 
-  // 役員報酬（社長が会社から受け取る固定額）
-  const ceoPay = Math.round((typeof CEO_DAILY_EXEC_PAY !== 'undefined' ? CEO_DAILY_EXEC_PAY : 20) * mult);
+  // 役員報酬（オフィスLv連動）
+  const basePay = (typeof getCeoDailyPay === 'function') ? getCeoDailyPay() : CEO_DAILY_EXEC_PAY;
+  const ceoPay = Math.round(basePay * mult);
 
+  const totalRevenue = miningUsdtValue + gemSalesUsd;
   const totalExpenses = rent + totalWages + ceoPay;
-  const netProfit = miningUsdtValue - totalExpenses;
+  const netProfit = totalRevenue - totalExpenses;
   const netColor = netProfit >= 0 ? '#7ae890' : '#ff7a7a';
   const netSign = netProfit >= 0 ? '+' : '';
 
@@ -10595,6 +10652,11 @@ function renderResultCompanyExpenses() {
       <span>⛏ 採掘収入（${miningDjm.toLocaleString()} DJM × $${djmPrice.toFixed(5)})</span>
       <b>+$${miningUsdtValue.toFixed(2)}</b>
     </div>
+    ${gemSalesUsd > 0 ? `
+    <div style="display:flex; justify-content:space-between; color:#7ae890;">
+      <span>💎 宝石・ダイヤ売却益</span>
+      <b>+$${gemSalesUsd.toFixed(2)}</b>
+    </div>` : ''}
     <div style="height:1px; background:#555; margin:6px 0;"></div>
     <div style="display:flex; justify-content:space-between; color:#ff7a7a;">
       <span>🏬 オフィス家賃（${office.name}）</span>
@@ -10606,9 +10668,14 @@ function renderResultCompanyExpenses() {
     </div>
     <div style="padding-left:12px; font-size:10px; color:#ffd700;">└ ${rankBreakdown}</div>
     <div style="display:flex; justify-content:space-between; color:#ff7a7a;">
-      <span>💼 社長役員報酬（→個人へ）</span>
+      <span>💼 社長役員報酬（→個人へ・オフィスLv${office.lv}連動）</span>
       <b>-$${ceoPay}</b>
     </div>
+    ${personalDiamondUsd > 0 ? `
+    <div style="display:flex; justify-content:space-between; color:#ff00aa;">
+      <span>💎 ダイヤ役得（→個人へ・売却の50%）</span>
+      <b>-$${personalDiamondUsd.toFixed(2)}</b>
+    </div>` : ''}
     <div style="height:2px; background:#ffd700; margin:8px 0;"></div>
     <div style="display:flex; justify-content:space-between; font-size:14px;">
       <span style="color:#fff;"><b>💰 本日の純利益</b></span>
@@ -11589,8 +11656,9 @@ function processDailyWage() {
   }
 
   if (state.personal.hasCompany) {
-    // 🎩 独立社長：自社から役員報酬
-    const pay = Math.round(CEO_DAILY_EXEC_PAY * mult);
+    // 🎩 独立社長：自社から役員報酬（ランキングモードはオフィスLv連動）
+    const basePay = (typeof getCeoDailyPay === 'function') ? getCeoDailyPay() : CEO_DAILY_EXEC_PAY;
+    const pay = Math.round(basePay * mult);
     if ((state.usdt || 0) >= pay) {
       state.usdt -= pay;
       state.personal.usdt += pay;
@@ -13796,8 +13864,8 @@ const TUTORIAL_STEPS_RANKING = [
   },
   {
     icon: '💰',
-    title: 'STEP 2：社長の役員報酬',
-    text: '独立社長の{{name}}は<strong style="color:#ffd700;">自分の会社から役員報酬を受け取る</strong>立場：<br><br>💼 <strong>役員報酬 日給 $20 USDT</strong>（毎朝自動で会社→個人へ振込）<br>・原資は<strong>自社の会社ウォレット</strong>から<br>・会社USDTが不足なら<strong style="color:#b93a3a;">今日の給料はゼロ</strong>（自営業のリアル）<br><br>🪙 採掘 DJM・ダイヤ売却益は <strong>100%{{name}}の会社</strong> に入る。<br>会社を黒字化して自分の給料を確保せよ！',
+    title: 'STEP 2：社長の個人収入（2本立て）',
+    text: '独立社長の{{name}}の個人収入は<strong style="color:#ffd700;">2本立て</strong>や！<br><br>💼 <strong>① 役員報酬（オフィスLv連動）</strong><br>毎朝自動で会社→個人へ振込。オフィス大きくなれば日給も爆上がり：<br>・Lv.1 雑居：<strong>$20/日</strong><br>・Lv.2 テナント：<strong style="color:#7ae890;">$50/日</strong><br>・Lv.3 タワー：<strong style="color:#7ae890;">$120/日</strong><br>・Lv.4 自社ビル：<strong style="color:#ffd700;">$300/日</strong><br>・Lv.5 本社：<strong style="color:#ff00aa;">$800/日</strong><br>※ 会社USDTが不足なら今日の給料はゼロ（自営業のリアル）<br><br>💎 <strong>② ダイヤ売却の役得（50%個人）</strong><br>鑑定済ダイヤを売ると<strong style="color:#ffd700;">50%が社長個人、50%が会社</strong>に入る。<br>「社長の宝物コレクション」やで！<br><br>🪙 採掘 DJM・通常宝石の売却は<strong>100%会社</strong>。<br>会社を大きくして、ダイヤ掘って、個人資産も積み上げろ！',
   },
   {
     icon: '🧑‍💼',
@@ -13822,7 +13890,7 @@ const TUTORIAL_STEPS_RANKING = [
   {
     icon: '🏗',
     title: 'STEP 6.5：🌟 オフィスをアップグレードして会社ランクUP',
-    text: '会社経営編の<strong style="color:#ffd700;">ランクアップ＝オフィスのアップグレード</strong>。<br><br>📊 <strong>5段階のオフィス</strong>：<br>・Lv.1 雑居オフィス（家賃$10、つるはし2本、社員3人）← 初期<br>・<strong style="color:#7ae890;">Lv.2 テナントビル</strong>（$500で昇格 / 家賃$30、つるはし3本、社員6人）<br>・Lv.3 タワーフロア（$2,000 / 家賃$80、つるはし5本、社員12人）<br>・Lv.4 自社ビル（$10,000 / 家賃$180、つるはし7本、社員25人）<br>・<strong style="color:#ff00aa;">Lv.5 グローバル本社</strong>（$50,000 / 家賃$400、つるはし10本、社員50人）<br><br>🎯 <strong>アップグレードで一気に色々強化！</strong><br>・<strong>つるはし装着可能数アップ</strong>（同時掘削増 → 採掘倍率UP）<br>・<strong>社員定員アップ</strong>（高ランク社員を雇える）<br>・<strong>新しい鉱山が解放</strong>（DJM大量採掘可能）<br><br>💵 <strong>原資の作り方</strong>：採掘売却＋取引所アービ＋ステーキングで会社USDTを貯めよう！<br>会社USDTが昇格費用に達したら<strong style="color:#ffd700;">自動で「アップグレードする？」とポップアップ</strong>が出るで！',
+    text: '会社経営編の<strong style="color:#ffd700;">ランクアップ＝オフィスのアップグレード</strong>。<br><br>📊 <strong>5段階のオフィス</strong>（家賃・つるはし・社員・<strong style="color:#ffd700;">社長日給</strong>）：<br>・Lv.1 雑居（$10/2本/3人/<strong>$20</strong>）← 初期<br>・<strong style="color:#7ae890;">Lv.2 テナント</strong>（$500昇格 / $30/3本/6人/<strong>$50</strong>）<br>・Lv.3 タワー（$2,000 / $80/5本/12人/<strong>$120</strong>）<br>・Lv.4 自社ビル（$10,000 / $180/7本/25人/<strong>$300</strong>）<br>・<strong style="color:#ff00aa;">Lv.5 本社</strong>（$50,000 / $400/10本/50人/<strong style="color:#ff00aa;">$800</strong>）<br><br>🎯 <strong>アップグレードで一気に強化！</strong><br>・<strong>つるはし装着数UP</strong>（同時掘削増で採掘倍率UP）<br>・<strong>社員定員UP</strong>（高ランク社員を雇える）<br>・<strong>新しい鉱山が解放</strong><br>・<strong style="color:#ffd700;">社長の日給も跳ねる</strong>（最大40倍に！）<br><br>💵 <strong>原資の作り方</strong>：採掘売却＋取引所アービ＋ステーキングで会社USDTを貯めよう！<br>会社USDTが昇格費用に達したら<strong style="color:#ffd700;">自動で「アップグレードする？」とポップアップ</strong>が出るで！',
   },
   {
     icon: '⛏',
@@ -14428,25 +14496,25 @@ function spawnStaffBubble(employee, quote) {
   setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 6550);
 }
 
-// 🗨️ 社員ローテーション（吹き出し方式）：7〜10秒おきに1〜2人が話す
+// 🗨️ 社員ローテーション（吹き出し方式）：4〜5秒おきに誰かが話す
 let _staffQuoteTimer = null;
+function _spawnOneRandomBubble() {
+  if (state?.gameMode !== 'ranking') return;
+  if (!document.getElementById('screen-game')?.classList.contains('active')) return;
+  const employees = state?.company?.employees || [];
+  if (employees.length === 0) return;
+  const nonAbsent = employees.filter(e => e.todayStatus !== 'absent');
+  const pool = nonAbsent.length > 0 ? nonAbsent : employees;
+  const e = pool[Math.floor(Math.random() * pool.length)];
+  if (!e) return;
+  const quote = e.todayStatusMsg || (typeof pickStaffQuote === 'function' ? pickStaffQuote(e) : '…');
+  try { spawnStaffBubble(e, quote); } catch(err) { console.warn('bubble err', err); }
+}
 function startStaffQuoteRotation() {
-  stopStaffQuoteRotation();
-  _staffQuoteTimer = setInterval(() => {
-    if (state?.gameMode !== 'ranking') return;
-    // 採掘画面でのみ吹き出しを出す
-    if (!document.getElementById('screen-game')?.classList.contains('active')) return;
-    const employees = state?.company?.employees || [];
-    if (employees.length === 0) return;
-    // 非欠勤優先
-    const nonAbsent = employees.filter(e => e.todayStatus !== 'absent');
-    const pool = nonAbsent.length > 0 ? nonAbsent : employees;
-    // ランダムに1人ピック
-    const e = pool[Math.floor(Math.random() * pool.length)];
-    if (!e) return;
-    const quote = e.todayStatusMsg || (typeof pickStaffQuote === 'function' ? pickStaffQuote(e) : '…');
-    try { spawnStaffBubble(e, quote); } catch(err) { console.warn('bubble err', err); }
-  }, 8000); // 8秒ごとに誰かが話す
+  if (_staffQuoteTimer) return; // 既に動いてたら何もしない（重複interval回避）
+  // 開始から1秒後に最初の1つ、以降5秒ごと
+  setTimeout(_spawnOneRandomBubble, 1000);
+  _staffQuoteTimer = setInterval(_spawnOneRandomBubble, 5000);
 }
 function stopStaffQuoteRotation() {
   if (_staffQuoteTimer) { clearInterval(_staffQuoteTimer); _staffQuoteTimer = null; }
@@ -14912,16 +14980,22 @@ function renderWallet() {
       if (debtEl) debtEl.textContent = state.personal.debt.toFixed(2);
     } else debtRow.style.display = 'none';
   }
-  // ボタン右上
+  // ボタン右上：会社ウォレットの表示残高
+  //   ランキングモード＝全通貨の市場換算合計（USDT + ROND*price + DJM*price）
+  //   個人モード＝USDTのみ
+  const isRankingMode = state.gameMode === 'ranking';
+  const displayBalance = isRankingMode
+    ? (typeof calcCompanyWealthMarket === 'function' ? calcCompanyWealthMarket() : (state.usdt || 0))
+    : (state.usdt || 0);
   const btnU = document.getElementById('wallet-btn-usdt');
-  if (btnU) btnU.textContent = (state.usdt || 0).toFixed(2);
+  if (btnU) btnU.textContent = displayBalance.toFixed(2);
   const btnL = document.getElementById('wallet-btn-label');
   if (btnL) btnL.textContent = connectedExchange ? EXCHANGES.find(e => e.id === connectedExchange).name : '会社';
   const dot = document.getElementById('wallet-conn-dot');
   if (dot) dot.classList.toggle('on', !!connectedExchange);
-  // 会社パネル内のウォレットボタンUSDT表示も同期
+  // 会社パネル内のウォレットボタンUSDT表示も同期（こちらも合計市場換算）
   const sidePanelUsdt = document.getElementById('hud-company-wallet-usdt');
-  if (sidePanelUsdt) sidePanelUsdt.textContent = (state.usdt || 0).toFixed(2);
+  if (sidePanelUsdt) sidePanelUsdt.textContent = displayBalance.toFixed(2);
 
   // 取引所ボタン
   const grid = document.getElementById('wallet-ex-buttons');
