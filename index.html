@@ -8265,33 +8265,79 @@ function renderResultGems() {
   const gDiv = document.getElementById('result-gems');
   if (!gDiv || !game) return;
   gDiv.innerHTML = '';
-  if (!game.gems || game.gems.length === 0) {
-    gDiv.innerHTML = '<div class="gem-tag" style="background:#eee; opacity:0.7;">💔 宝石ゼロ……次がある</div>';
-    return;
-  }
   // 現在rawDiamondsに残っているID一覧 = 未売却
-  const activeIds = new Set(
-    (state.personal?.rawDiamonds || [])
-      .map(d => d.discoverId)
-      .filter(Boolean)
-  );
-  game.gems.forEach(g => {
-    const tag = document.createElement('div');
-    tag.className = 'gem-tag';
-    // _linkedId があって、かつ rawDiamonds に存在しなければ「売却済み」
-    const isSold = g._linkedId && !activeIds.has(g._linkedId);
-    if (isSold) {
-      tag.style.opacity = '0.4';
-      tag.style.textDecoration = 'line-through';
-    }
-    tag.innerHTML = `<svg width="26" height="26"><use href="#${g.sym}"/></svg>
-      <div>
-        <div>${g.name}${isSold ? ' <span style="color:#3a7a4a; font-size:10px; font-weight:900; text-decoration:none;">✅売却済</span>' : ''}</div>
-        <div style="font-size:10px; color:#666;">${g.quality}/${g.carat}ct</div>
-      </div>
-      <span class="badge ${g.badge}">${g.badge}</span>`;
-    gDiv.appendChild(tag);
+  const rawAll = state.personal?.rawDiamonds || [];
+  const activeIds = new Set(rawAll.map(d => d.discoverId).filter(Boolean));
+
+  // ① 本日の宝石セクション
+  const todayHeader = document.createElement('div');
+  todayHeader.style.cssText = 'grid-column:1/-1; font-size:11px; font-weight:900; color:#5a3e7a; margin-bottom:4px; padding:3px 6px; background:rgba(90,62,122,0.1); border-left:3px solid #5a3e7a;';
+  todayHeader.textContent = `📅 本日の収穫（DAY ${state.day || 1}）${game.gems && game.gems.length ? '：' + game.gems.length + '個' : ''}`;
+  gDiv.appendChild(todayHeader);
+
+  if (game.gems && game.gems.length > 0) {
+    game.gems.forEach(g => {
+      const tag = document.createElement('div');
+      tag.className = 'gem-tag';
+      const isSold = g._linkedId && !activeIds.has(g._linkedId);
+      if (isSold) {
+        tag.style.opacity = '0.4';
+        tag.style.textDecoration = 'line-through';
+      }
+      tag.innerHTML = `<svg width="26" height="26"><use href="#${g.sym}"/></svg>
+        <div>
+          <div>${g.name}${isSold ? ' <span style="color:#3a7a4a; font-size:10px; font-weight:900; text-decoration:none;">✅売却済</span>' : ''}</div>
+          <div style="font-size:10px; color:#666;">${g.quality}/${g.carat}ct</div>
+        </div>
+        <span class="badge ${g.badge}">${g.badge}</span>`;
+      gDiv.appendChild(tag);
+    });
+  } else {
+    const empty = document.createElement('div');
+    empty.className = 'gem-tag';
+    empty.style.cssText = 'background:#eee; opacity:0.7; grid-column:1/-1;';
+    empty.innerHTML = '💔 本日は宝石ゼロ……次がある';
+    gDiv.appendChild(empty);
+  }
+
+  // ② 累積在庫セクション（過去日の未売却分）：今日の_linkedIdに含まれない gem-collected と未鑑定ダイヤ原石
+  const todayIds = new Set((game.gems || []).map(g => g._linkedId).filter(Boolean));
+  const stockUnsold = rawAll.filter(d => {
+    if (d.status !== 'gem-collected' && d.status !== 'raw' && d.status !== 'appraised') return false;
+    if (d.discoverId && todayIds.has(d.discoverId)) return false; // 今日の在庫は重複表示しない
+    return true;
   });
+  if (stockUnsold.length > 0) {
+    const stockHeader = document.createElement('div');
+    stockHeader.style.cssText = 'grid-column:1/-1; font-size:11px; font-weight:900; color:#b8860b; margin:8px 0 4px 0; padding:3px 6px; background:rgba(184,134,11,0.12); border-left:3px solid #b8860b; display:flex; justify-content:space-between; align-items:center;';
+    const totalVal = stockUnsold.reduce((s, d) => s + (d.valueUsd || d.appraised?.valueUsd || 0), 0);
+    stockHeader.innerHTML = `<span>📦 累積在庫（過去日の未売却 ${stockUnsold.length}個）</span><span style="color:#3a7a4a;">推定$${totalVal.toLocaleString()}</span>`;
+    gDiv.appendChild(stockHeader);
+    stockUnsold.forEach(d => {
+      const tag = document.createElement('div');
+      tag.className = 'gem-tag';
+      tag.style.cssText = 'border:2px dashed #b8860b; background:#fffaeb;';
+      const isRawDia = d.status === 'raw';
+      const symId = d.sym || (isRawDia ? 'diamond-raw' : 'gem-aqua');
+      const dispName = d.name || (isRawDia ? `ダイヤ原石 ${d.caratRaw||''}ct` : '宝石');
+      const subInfo = d.status === 'appraised'
+        ? `${d.appraised.grade}級 ${d.caratRaw}ct`
+        : (d.status === 'raw' ? `${d.caratRaw||0}ct（未鑑定）` : `${d.quality||'?'}/${d.carat||0}ct`);
+      const valTxt = (d.valueUsd || d.appraised?.valueUsd || 0).toLocaleString();
+      tag.innerHTML = `<svg width="26" height="26"><use href="#${symId}"/></svg>
+        <div style="flex:1;">
+          <div style="font-size:11px;">${dispName}<span style="color:#888; font-size:9px; margin-left:4px;">DAY${d.discoverDay || '?'}</span></div>
+          <div style="font-size:10px; color:#666;">${subInfo} ／ <span style="color:#3a7a4a; font-weight:900;">$${valTxt}</span></div>
+        </div>
+        <span class="badge" style="background:#b8860b; color:#fff;">在庫</span>`;
+      gDiv.appendChild(tag);
+    });
+    // 鑑定所へリンクの注釈
+    const link = document.createElement('div');
+    link.style.cssText = 'grid-column:1/-1; font-size:10px; color:#888; text-align:center; margin-top:4px;';
+    link.innerHTML = '💡 売却・鑑定は <button onclick="closeAllModals(); openAppraiserModal();" style="background:#5a3e7a; color:#fff; border:2px solid #1a1a1a; padding:3px 10px; font-weight:900; cursor:pointer; font-size:10px;">💎 鑑定所</button> から！';
+    gDiv.appendChild(link);
+  }
 }
 
 // セッション終了時に累計戦績に加算
@@ -8758,6 +8804,8 @@ function finishDrill(idx) {
     // ★ダイヤ専用の全画面派手演出
     showDiamondDiscovery(el, loot, coinsEarned);
     snapshotWealth('mining', 0, `💎 ダイヤ原石 ${loot.caratRaw}ct 発見`);
+    // 💾 ダイヤ原石は超希少なので即セーブ
+    try { saveGame(); } catch(_){}
   } else if (loot.type === 'gem') {
     ourTeam.gems += 1;
     // ★売却判定用リンクID（後でrawDiamondsと照合するため同じIDを使う）
@@ -8804,6 +8852,8 @@ function finishDrill(idx) {
     if (loot.sym === 'gem-dia' || loot.sym === 'gem-gold' || loot.mega || loot.tier === 'epic' || loot.tier === 'legend') {
       showDiamondDiscovery(el, loot, coinsEarned);
     }
+    // 💾 宝石は希少なので、ブラウザ突然落ち対策に即セーブ
+    try { saveGame(); } catch(_){}
   } else {
     showShousekiReveal(el, loot);
     popSFX(el, loot.sfx, loot.cls);
