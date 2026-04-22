@@ -9332,6 +9332,8 @@ function sellDiamond(idx) {
   if (isRanking) {
     if (!game) game = {};
     game.companyGemSalesUsd = (game.companyGemSalesUsd || 0) + companyShare;
+    // ダイヤ専用：会社分（50%）と個人分（50%）を別トラッキング
+    game.companyDiamondSalesUsd = (game.companyDiamondSalesUsd || 0) + companyShare;
     game.personalDiamondSalesUsd = (game.personalDiamondSalesUsd || 0) + personalGain;
   }
   // 🎵 売却SE：レジの「チン♪」風 + 金額に応じたファンファーレ
@@ -9374,13 +9376,15 @@ function sellGemFromCollection(idx) {
   if (!d || d.status !== 'gem-collected') return;
   const isRanking = state.gameMode === 'ranking';
   const isEmployed = !state.personal.hasCompany;
-  // 💰 売却先のルール（sellDiamond と同じ）
+  // 💰 売却先のルール（通常宝石は100%会社）
   let personalGain = 0, companyShare = 0;
   if (isRanking) {
     companyShare = +d.valueUsd.toFixed(2);
     state.usdt += companyShare;
     if (!game) game = {};
     game.companyGemSalesUsd = (game.companyGemSalesUsd || 0) + companyShare;
+    // 通常宝石専用トラッキング（結果画面レポートのブレイクダウン用）
+    game.companyRegularGemSalesUsd = (game.companyRegularGemSalesUsd || 0) + companyShare;
   } else if (isEmployed) {
     personalGain = +(d.valueUsd * COMPANY_DIA_INCENTIVE).toFixed(2);
     companyShare = +(d.valueUsd * (1 - COMPANY_DIA_INCENTIVE)).toFixed(2);
@@ -10547,15 +10551,19 @@ function goResult() {
   });
   state.personal.usdt += passiveIncome;
 
-  document.getElementById('result-amt').textContent = game.coins.toLocaleString();
-  document.getElementById('r-mined').textContent = game.minedCount;
-  document.getElementById('r-shouseki').textContent = game.shoushekiCount;
-  document.getElementById('r-gems').textContent = game.gems.length;
-  document.getElementById('r-rond').textContent = Math.floor(state.djm).toLocaleString();
-
-  // 個人ウォレット表示
-  document.getElementById('r-personal-usdt').textContent = state.personal.usdt.toFixed(2);
-  document.getElementById('r-incentive').textContent = incentiveUsdt.toFixed(2) + (passiveIncome ? ` (＋不動産収入 $${passiveIncome})` : '');
+  // 🛡 安全に textContent 設定（要素が無くてもクラッシュしない）
+  const _setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+    else console.warn('[goResult] missing element:', id);
+  };
+  _setText('result-amt',     (game.coins || 0).toLocaleString());
+  _setText('r-mined',        game.minedCount || 0);
+  _setText('r-shouseki',     game.shoushekiCount || 0);
+  _setText('r-gems',         (game.gems || []).length);
+  _setText('r-rond',         Math.floor(state.djm || 0).toLocaleString());
+  _setText('r-personal-usdt', (state.personal.usdt || 0).toFixed(2));
+  _setText('r-incentive',     incentiveUsdt.toFixed(2) + (passiveIncome ? ` (＋不動産収入 $${passiveIncome})` : ''));
   // 📝 モード別に注釈をラベル付け替え
   const incomeNote = document.getElementById('r-income-note');
   if (incomeNote) {
@@ -10582,19 +10590,21 @@ function goResult() {
   }
   // 資産表示
   const assetsDiv = document.getElementById('r-assets');
-  assetsDiv.innerHTML = '';
-  if (state.personal.hasCompany) {
-    const chip = document.createElement('div');
-    chip.className = 'asset-chip income';
-    chip.innerHTML = `🏢 ${state.personal.companyName}`;
-    assetsDiv.appendChild(chip);
+  if (assetsDiv) {
+    assetsDiv.innerHTML = '';
+    if (state.personal.hasCompany) {
+      const chip = document.createElement('div');
+      chip.className = 'asset-chip income';
+      chip.innerHTML = `🏢 ${state.personal.companyName}`;
+      assetsDiv.appendChild(chip);
+    }
+    state.personal.assets.forEach(a => {
+      const chip = document.createElement('div');
+      chip.className = 'asset-chip' + (a.monthly > 0 ? ' income' : a.monthly < 0 ? ' cost' : '');
+      chip.innerHTML = `${a.icon} ${a.name}${a.monthly > 0 ? ' +$'+a.monthly+'/日' : a.monthly < 0 ? ' -$'+Math.abs(a.monthly)+'/日' : ''}`;
+      assetsDiv.appendChild(chip);
+    });
   }
-  state.personal.assets.forEach(a => {
-    const chip = document.createElement('div');
-    chip.className = 'asset-chip' + (a.monthly > 0 ? ' income' : a.monthly < 0 ? ' cost' : '');
-    chip.innerHTML = `${a.icon} ${a.name}${a.monthly > 0 ? ' +$'+a.monthly+'/日' : a.monthly < 0 ? ' -$'+Math.abs(a.monthly)+'/日' : ''}`;
-    assetsDiv.appendChild(chip);
-  });
 
   // ランキング（全チーム表示＋自分の順位までスクロール演出）
   renderResultRanking();
@@ -10631,13 +10641,15 @@ function goResult() {
     msg = '花子：な、な、なんぼあんの！？<br>みらい：ピアノ買えるー！ハワイも行けるー！';
     setTimeout(() => SE.play('news_great'), 400);        // 🎉 大当たり
   }
-  document.getElementById('family-msg').innerHTML = msg;
+  const familyMsgEl = document.getElementById('family-msg');
+  if (familyMsgEl) familyMsgEl.innerHTML = msg;
 
   // 🏢 ランキングモード：会社経費レポート（家賃・人件費・採掘収入・純利益）
   try { renderResultCompanyExpenses(); } catch(e) { console.warn('expenses render', e); }
 
-  showScreen('screen-result');
-  saveGame();
+  // ✅ 結果画面に確実に遷移（途中でエラー出ても最後はここに来る）
+  try { showScreen('screen-result'); } catch(e) { console.warn('showScreen failed', e); }
+  try { saveGame(); } catch(_){}
 }
 
 // 結果画面が表示中なら経費レポートを再描画（売却・採用・解雇後の同期）
@@ -10679,8 +10691,11 @@ function renderResultCompanyExpenses() {
   const miningUsdtValue = miningDjm * djmPrice;
   // 宝石・ダイヤ売却による会社USDT増分（sellDiamond/sellGemFromCollection で積算）
   const gemSalesUsd = game?.companyGemSalesUsd || 0;
-  // ダイヤ売却の個人取り分（ランキングモードは社長に50%）
-  const personalDiamondUsd = game?.personalDiamondSalesUsd || 0;
+  // 内訳（ブレイクダウン表示用）
+  const regularGemUsd = game?.companyRegularGemSalesUsd || 0;     // 通常宝石（100%会社）
+  const companyDiamondUsd = game?.companyDiamondSalesUsd || 0;    // ダイヤ会社分（売却の50%）
+  const personalDiamondUsd = game?.personalDiamondSalesUsd || 0;  // ダイヤ個人分（売却の50%）
+  const fullDiamondTotal = companyDiamondUsd + personalDiamondUsd; // ダイヤ売却100%の額（参考）
 
   // 役員報酬（オフィスLv連動）
   const basePay = (typeof getCeoDailyPay === 'function') ? getCeoDailyPay() : CEO_DAILY_EXEC_PAY;
@@ -10703,10 +10718,18 @@ function renderResultCompanyExpenses() {
       <span>⛏ 採掘収入（${miningDjm.toLocaleString()} DJM × $${djmPrice.toFixed(5)})</span>
       <b>+$${miningUsdtValue.toFixed(2)}</b>
     </div>
-    ${gemSalesUsd > 0 ? `
+    ${regularGemUsd > 0 ? `
     <div style="display:flex; justify-content:space-between; color:#7ae890;">
-      <span>💎 宝石・ダイヤ売却益</span>
-      <b>+$${gemSalesUsd.toFixed(2)}</b>
+      <span>💠 通常宝石売却（100%会社）</span>
+      <b>+$${regularGemUsd.toFixed(2)}</b>
+    </div>` : ''}
+    ${companyDiamondUsd > 0 ? `
+    <div style="display:flex; justify-content:space-between; color:#7ae890;">
+      <span>💎 ダイヤ売却・会社分（売却額の50%）</span>
+      <b>+$${companyDiamondUsd.toFixed(2)}</b>
+    </div>
+    <div style="padding-left:12px; font-size:10px; color:#ff00aa;">
+      └ 残り50%（$${personalDiamondUsd.toFixed(2)}）は社長個人ウォレットへ振込（社長の役得）
     </div>` : ''}
     <div style="height:1px; background:#555; margin:6px 0;"></div>
     <div style="display:flex; justify-content:space-between; color:#ff7a7a;">
@@ -10722,14 +10745,9 @@ function renderResultCompanyExpenses() {
       <span>💼 社長役員報酬（→個人へ・オフィスLv${office.lv}連動）</span>
       <b>-$${ceoPay}</b>
     </div>
-    ${personalDiamondUsd > 0 ? `
-    <div style="display:flex; justify-content:space-between; color:#ff00aa;">
-      <span>💎 ダイヤ役得（→個人へ・売却の50%）</span>
-      <b>-$${personalDiamondUsd.toFixed(2)}</b>
-    </div>` : ''}
     <div style="height:2px; background:#ffd700; margin:8px 0;"></div>
     <div style="display:flex; justify-content:space-between; font-size:14px;">
-      <span style="color:#fff;"><b>💰 本日の純利益</b></span>
+      <span style="color:#fff;"><b>💰 本日の会社純利益</b></span>
       <b style="color:${netColor}; font-size:16px;">${netSign}$${netProfit.toFixed(2)}</b>
     </div>
     <div style="font-size:9px; color:#aaa; margin-top:6px; text-align:center;">
