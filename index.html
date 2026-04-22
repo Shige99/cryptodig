@@ -3025,17 +3025,31 @@
     50%      { box-shadow: 0 0 16px 4px #ff6060; }
   }
 
-  /* 宝石を引いたマスのキラキラ枠 */
+  /* 宝石を引いたマスのキラキラ枠（汎用ベース） */
   .rock.mined-gem {
     background: radial-gradient(circle, #4a3a7a, #1a0a3a);
     border-color: #ffd700 !important;
     box-shadow: inset 0 0 10px #ffd700, 0 0 8px #ffd700;
     animation: gemcellpulse 1.5s ease-in-out infinite alternate;
   }
+  /* 🎨 宝石種類別の背景色（gem-aqua=エメラルド緑、gem-spinel=ピンク、gem-dia=水色、gem-gold=金色） */
+  .rock.mined-gem.mined-gem-aqua   { background: radial-gradient(circle, #2a7a3a 0%, #0d3018 100%); box-shadow: inset 0 0 10px #5fd47a, 0 0 8px #5fd47a; }
+  .rock.mined-gem.mined-gem-spinel { background: radial-gradient(circle, #7a2a4a 0%, #3a0d18 100%); box-shadow: inset 0 0 10px #e85a7a, 0 0 8px #e85a7a; }
+  .rock.mined-gem.mined-gem-dia    { background: radial-gradient(circle, #2a5a7a 0%, #0d2030 100%); box-shadow: inset 0 0 12px #e0f5ff, 0 0 10px #8ed8ff; }
+  .rock.mined-gem.mined-gem-gold   { background: radial-gradient(circle, #b8860b 0%, #3a2a0a 100%); box-shadow: inset 0 0 12px #ffd700, 0 0 10px #ff6b3d; }
   @keyframes gemcellpulse {
     from { box-shadow: inset 0 0 6px #ffd700, 0 0 4px #ffd700; }
     to   { box-shadow: inset 0 0 14px #ffd700, 0 0 12px #ff6b3d; }
   }
+  /* 各種別ごとのpulse（より特徴的な光り方） */
+  .rock.mined-gem.mined-gem-aqua   { animation: gemPulseAqua 1.5s ease-in-out infinite alternate; }
+  .rock.mined-gem.mined-gem-spinel { animation: gemPulseSpinel 1.5s ease-in-out infinite alternate; }
+  .rock.mined-gem.mined-gem-dia    { animation: gemPulseDia 1.5s ease-in-out infinite alternate; }
+  .rock.mined-gem.mined-gem-gold   { animation: gemPulseGold 1.5s ease-in-out infinite alternate; }
+  @keyframes gemPulseAqua   { from { box-shadow: inset 0 0 8px #5fd47a, 0 0 6px #5fd47a; } to { box-shadow: inset 0 0 16px #5fd47a, 0 0 14px #7ae890; } }
+  @keyframes gemPulseSpinel { from { box-shadow: inset 0 0 8px #e85a7a, 0 0 6px #e85a7a; } to { box-shadow: inset 0 0 16px #e85a7a, 0 0 14px #ff9ab0; } }
+  @keyframes gemPulseDia    { from { box-shadow: inset 0 0 10px #e0f5ff, 0 0 8px #8ed8ff; } to { box-shadow: inset 0 0 20px #fff, 0 0 16px #8ed8ff; } }
+  @keyframes gemPulseGold   { from { box-shadow: inset 0 0 12px #ffd700, 0 0 10px #ff6b3d; } to { box-shadow: inset 0 0 22px #fff, 0 0 16px #ffd700; } }
 
   /* 全つるはし破損バナー */
   .pick-broken-banner {
@@ -8812,6 +8826,8 @@ function finishDrill(idx) {
     const _gemDiscoverId = 'g' + Date.now() + Math.floor(Math.random()*1000);
     game.gems.push({ ...loot, _linkedId: _gemDiscoverId });
     el.classList.add('mined-gem');
+    // 🎨 宝石の種類で背景色を変える（紫一色だと種類がわかりにくい）
+    if (loot.sym) el.classList.add('mined-gem-' + loot.sym.replace('gem-', ''));
     chatEvent('gem');
     showGemReveal(el, loot);
     popSFX(el, loot.sfx, loot.mega ? 'mega' : 'gold');
