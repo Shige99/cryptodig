@@ -1940,6 +1940,20 @@
     z-index: 810;
   }
   .staff-bubble.fade-out { animation: staffBubbleOut 0.5s ease-in forwards; }
+  /* 🦹 ライバル（マキシー等）の吹き出しは赤枠・煽りスタイル */
+  .staff-bubble.rival-bubble {
+    background: linear-gradient(135deg, #ffd0d0 0%, #ffe8d8 100%);
+    border-color: #b93a3a;
+    box-shadow: 3px 3px 0 rgba(185,58,58,0.5), 0 0 14px rgba(185,58,58,0.4);
+    animation: staffBubbleIn 0.4s ease-out, rivalPulse 1.4s ease-in-out infinite alternate;
+  }
+  .staff-bubble.rival-bubble::after { border-top-color: #b93a3a; }
+  .staff-bubble.rival-bubble .sb-name { color: #b93a3a; }
+  .staff-bubble.rival-bubble .sb-rank { background: #b93a3a !important; color: #fff; }
+  @keyframes rivalPulse {
+    from { box-shadow: 3px 3px 0 rgba(185,58,58,0.5), 0 0 14px rgba(185,58,58,0.4); }
+    to   { box-shadow: 3px 3px 0 rgba(185,58,58,0.6), 0 0 22px rgba(255,107,61,0.7); }
+  }
   .staff-bubble::after {
     content: ''; position: absolute; bottom: -12px; left: 20px;
     border: 7px solid transparent; border-top-color: #1a1a1a; border-bottom: 0;
@@ -6528,6 +6542,10 @@ const OPENING_PANELS = [
   { ep: 2, idx: 1, render: renderOp2_2 },
   { ep: 2, idx: 2, render: renderOp2_3 },
   { ep: 2, idx: 3, render: renderOp2_4 },
+  // 🦹 第3話：ライバル「マキシー」登場！
+  { ep: 3, idx: 0, render: renderOp3_1 },
+  { ep: 3, idx: 1, render: renderOp3_2 },
+  { ep: 3, idx: 2, render: renderOp3_3 },
 ];
 let opIndex = 0;
 
@@ -6753,6 +6771,42 @@ function renderOp2_4() {
     <div style="position:absolute; top:15%; left:50%; transform:translateX(-50%);"><svg width="100" height="100"><use href="#gem-aqua"/></svg></div>
     <div class="op-sfx gold" style="top:15px; left:20px; font-size:64px;">キラッ</div>
     <div class="op-bubble shout" style="top:30px; right:30px; padding:14px; font-size:16px;">出たーー！！</div>`;
+}
+
+// 🦹 第3話：ライバル「マキシー」登場！
+function renderOp3_1() {
+  // 🎵 ヘリ着陸風 + ガラの悪い登場SE
+  SE.play('news_terrible');
+  setTimeout(() => SE.play('shock'), 600);
+  return `<div class="op-bg bg-night"></div>
+    <div class="op-narr">そのころ、鉱山界に一人の男が降り立った――</div>
+    <div class="op-char" style="bottom:20px; left:50%; transform:translateX(-50%);"><svg width="220" height="290"><use href="#maxie"/></svg></div>
+    <div class="op-sfx gold" style="top:30px; right:30px; font-size:48px; transform:rotate(-8deg);">$$$</div>
+    <div class="op-sfx" style="top:50%; left:5%; color:#ffd700; font-size:24px;">バサァッ</div>
+    <div class="op-bubble" style="top:40px; left:30px; max-width:35%; background:#ffd0d0; border-color:#b93a3a;">台湾の MAXIE Mining や〜<br>《CryptoBeastZ》で <b>7億稼いだ</b> 男や</div>`;
+}
+function renderOp3_2() {
+  // 🎵 ライバル登場の煽りSE
+  SE.play('news_bad');
+  setTimeout(() => SE.play('rumble'), 400);
+  return `<div class="op-bg bg-mine-dark"></div>
+    <div class="op-char" style="bottom:30px; left:15%;"><svg width="180" height="240"><use href="#dojima"/></svg></div>
+    <div class="op-char" style="bottom:30px; right:15%;"><svg width="180" height="240"><use href="#maxie"/></svg></div>
+    <div class="op-bubble" style="top:30px; right:30px; max-width:42%; background:#ffd0d0; border-color:#b93a3a;">おっちゃん、その<b>ボロつるはし</b>で<br>勝てると思てんの？<br>資本力の前には勘なんて無意味やで〜</div>
+    <div class="op-bubble mono" style="bottom:40px; left:30px; max-width:35%;">なんやコイツ……<br>ムカつくな〜！</div>
+    <div class="op-sfx" style="top:50%; left:50%; color:#b93a3a; font-size:32px; transform:translate(-50%,-50%) rotate(-5deg);">ピリピリ……</div>`;
+}
+function renderOp3_3() {
+  // 🎵 闘志メラメラ！戦いの幕開け
+  SE.play('shakeen');
+  setTimeout(() => SE.play('news_great'), 350);
+  return `<div class="op-bg bg-flash"></div>
+    <div class="op-char" style="bottom:30px; left:8%;"><svg width="120" height="170"><use href="#horun"/></svg></div>
+    <div class="op-char" style="bottom:30px; left:30%;"><svg width="140" height="190"><use href="#dojima-fire"/></svg></div>
+    <div class="op-char" style="bottom:30px; left:54%;"><svg width="120" height="170"><use href="#harukichi"/></svg></div>
+    <div class="op-char" style="bottom:30px; left:78%;"><svg width="120" height="170"><use href="#ing"/></svg></div>
+    <div class="op-sfx gold" style="top:20px; left:30px; font-size:56px; transform:rotate(-6deg);">メラメラ</div>
+    <div class="op-bubble shout" style="top:20px; right:30px; padding:14px; font-size:18px;">マキシーに負けへん！<br>家族のために掘り勝ったる！</div>`;
 }
 
 // ============================================================
@@ -14779,6 +14833,8 @@ const PERSONAL_CHAR_DEFS = [
   { key: 'horun',     name: 'ほるん社長', sym: 'horun',     color: '#b93a3a' },
   { key: 'harukichi', name: 'はるきち',   sym: 'harukichi', color: '#d4a64a' },
   { key: 'ing',       name: 'いんぐちゃん', sym: 'ing',     color: '#5a3e7a' },
+  // 🦹 ライバル：マキシー（採掘中に煽ってくる、頻度は低め）
+  { key: 'maxie',     name: 'マキシー',   sym: 'maxie',    color: '#b93a3a', isRival: true },
 ];
 function spawnPersonalBubble(charKey, quote) {
   const def = PERSONAL_CHAR_DEFS.find(d => d.key === charKey);
@@ -14788,9 +14844,10 @@ function spawnPersonalBubble(charKey, quote) {
   spawnBubbleGeneric({
     avatarHtml,
     name: def.name,
-    nameBadge: '',
+    nameBadge: def.isRival ? '⚔ RIVAL' : '',
     nameBadgeColor: def.color,
     quote,
+    isRival: def.isRival,
   });
 }
 // 🗨️ 採掘画面に社員の吹き出しをフローティング生成（ランキングモード用）
@@ -14809,7 +14866,7 @@ function spawnStaffBubble(employee, quote) {
   });
 }
 // 🗨️ 共通の吹き出し生成器
-function spawnBubbleGeneric({ avatarHtml, name, nameBadge, nameBadgeColor, quote }) {
+function spawnBubbleGeneric({ avatarHtml, name, nameBadge, nameBadgeColor, quote, isRival }) {
   const mine = document.getElementById('mine');
   if (!mine) return;
   // 吹き出し用コンテナを確保
@@ -14839,7 +14896,7 @@ function spawnBubbleGeneric({ avatarHtml, name, nameBadge, nameBadgeColor, quote
     ? `<span class="sb-rank" style="background:${nameBadgeColor || '#1a1a1a'};">${_escHtml(nameBadge)}</span>`
     : '';
   const bubble = document.createElement('div');
-  bubble.className = 'staff-bubble';
+  bubble.className = 'staff-bubble' + (isRival ? ' rival-bubble' : '');
   bubble.style.left = left + 'px';
   bubble.style.top  = top + 'px';
   bubble.innerHTML = `
@@ -14862,6 +14919,14 @@ let _staffQuoteTimer = null;
 function _spawnOneRandomBubble() {
   if (!document.getElementById('screen-game')?.classList.contains('active')) return;
   const isRanking = state?.gameMode === 'ranking';
+  // 🦹 マキシー乱入：採掘中（game.teamsにmaxieがいる時）に20%の確率で割り込む
+  const maxieInGame = !!(game && game.teams && game.teams.find(t => t.id === 'maxie'));
+  if (maxieInGame && Math.random() < 0.20) {
+    const maxieLines = (typeof CHAT_LINES !== 'undefined' && CHAT_LINES.maxie?.idle) || ['Money talks〜', 'おっちゃん、まだ掘ってんの？', '俺の方が先や！'];
+    const line = maxieLines[Math.floor(Math.random() * maxieLines.length)];
+    try { spawnPersonalBubble('maxie', line); } catch(err) { console.warn('bubble err', err); }
+    return;
+  }
   if (isRanking) {
     // ランキングモード：社員からランダム
     const employees = state?.company?.employees || [];
