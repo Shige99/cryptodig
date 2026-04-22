@@ -3761,7 +3761,7 @@
     <symbol id="mystery" viewBox="0 0 120 160"><path d="M 25 110 L 15 160 L 105 160 L 95 110 Z" fill="#1a1a1a"/><rect x="30" y="95" width="60" height="30" fill="#1a1a1a"/><rect x="52" y="80" width="16" height="15" fill="#e8c090"/><ellipse cx="60" cy="55" rx="30" ry="34" fill="#e8c090"/><ellipse cx="60" cy="25" rx="42" ry="6" fill="#2a2a2a"/><rect x="32" y="10" width="56" height="18" rx="2" fill="#2a2a2a"/><rect x="32" y="26" width="56" height="3" fill="#6a3a1a"/><rect x="30" y="55" width="22" height="12" rx="3" fill="#1a1a1a"/><rect x="68" y="55" width="22" height="12" rx="3" fill="#1a1a1a"/><rect x="52" y="58" width="16" height="3" fill="#1a1a1a"/><path d="M 50 85 Q 60 80 70 85" stroke="#1a1a1a" stroke-width="2" fill="none"/></symbol>
     <symbol id="maxie" viewBox="0 0 120 160"><path d="M 28 115 L 18 160 L 102 160 L 92 115 Z" fill="#f8f8f0"/><rect x="35" y="95" width="50" height="25" fill="#0a0a0a"/><circle cx="60" cy="108" r="5" fill="#3ab870" stroke="#ffd700" stroke-width="1.5"/><rect x="52" y="82" width="16" height="15" fill="#e8b878"/><ellipse cx="60" cy="55" rx="30" ry="32" fill="#e8b878"/><path d="M 28 42 Q 30 20 60 18 Q 90 20 92 42 L 92 32 Q 70 24 60 26 Q 40 22 28 32 Z" fill="#1a0a00"/><path d="M 32 48 Q 40 44 50 48" stroke="#1a0a00" stroke-width="1.8" fill="none"/><path d="M 70 48 Q 80 44 88 48" stroke="#1a0a00" stroke-width="1.8" fill="none"/><path d="M 36 62 Q 42 58 48 62" stroke="#1a1a1a" stroke-width="2" fill="none"/><path d="M 72 62 Q 78 58 84 62" stroke="#1a1a1a" stroke-width="2" fill="none"/><path d="M 48 82 Q 60 92 72 82" stroke="#1a1a1a" stroke-width="2" fill="none"/></symbol>
 
-    <symbol id="gem-aqua" viewBox="0 0 80 80"><path d="M 40 10 L 70 35 L 40 70 L 10 35 Z" fill="#8ed8f0" stroke="#1a1a1a" stroke-width="2"/><path d="M 40 10 L 10 35 L 25 35 L 40 10 M 40 10 L 70 35 L 55 35 L 40 10 M 25 35 L 40 70 L 55 35" stroke="#1a1a1a" stroke-width="1" fill="none"/><path d="M 40 15 L 50 25" stroke="#fff" stroke-width="2"/></symbol>
+    <symbol id="gem-aqua" viewBox="0 0 80 80"><path d="M 40 10 L 70 35 L 40 70 L 10 35 Z" fill="#5fd47a" stroke="#1a1a1a" stroke-width="2"/><path d="M 40 10 L 10 35 L 25 35 L 40 10 M 40 10 L 70 35 L 55 35 L 40 10 M 25 35 L 40 70 L 55 35" stroke="#1a1a1a" stroke-width="1" fill="none"/><path d="M 40 15 L 50 25" stroke="#fff" stroke-width="2"/></symbol>
     <symbol id="gem-spinel" viewBox="0 0 80 80"><path d="M 40 10 L 70 35 L 40 70 L 10 35 Z" fill="#e85a7a" stroke="#1a1a1a" stroke-width="2"/><path d="M 40 10 L 10 35 L 25 35 L 40 10 M 40 10 L 70 35 L 55 35 L 40 10 M 25 35 L 40 70 L 55 35" stroke="#1a1a1a" stroke-width="1" fill="none"/><path d="M 40 15 L 50 25" stroke="#fff" stroke-width="2"/></symbol>
     <symbol id="gem-dia" viewBox="0 0 80 80"><path d="M 40 10 L 70 35 L 40 70 L 10 35 Z" fill="#e0f5ff" stroke="#1a1a1a" stroke-width="2"/><path d="M 40 10 L 10 35 L 25 35 L 40 10 M 40 10 L 70 35 L 55 35 L 40 10 M 25 35 L 40 70 L 55 35" stroke="#1a1a1a" stroke-width="1" fill="none"/><path d="M 40 15 L 50 25" stroke="#fff" stroke-width="2"/></symbol>
     <symbol id="gem-gold" viewBox="0 0 80 80"><path d="M 40 10 L 70 35 L 40 70 L 10 35 Z" fill="#ffd700" stroke="#1a1a1a" stroke-width="2"/><path d="M 40 10 L 10 35 L 25 35 L 40 10 M 40 10 L 70 35 L 55 35 L 40 10 M 25 35 L 40 70 L 55 35" stroke="#1a1a1a" stroke-width="1" fill="none"/><path d="M 40 15 L 50 25" stroke="#fff" stroke-width="2"/></symbol>
@@ -5000,7 +5000,8 @@
         <div id="result-avatar-wrap" style="display:none; flex-shrink:0; background:#1a1a1a; border:3px solid #ffd700; padding:4px; box-shadow:3px 3px 0 #000;"></div>
         <div style="flex:1;">
           <div class="name">👤 <span id="r-wallet-label">どうじまくん</span> 個人ウォレット</div>
-          <div class="amt">$ <span id="r-personal-usdt">0</span> USDT</div>
+          <div class="amt"><span id="r-personal-usdt-display">$ 0 USDT</span></div>
+          <div id="r-personal-debt" style="display:none; color:#ff7a7a; font-size:11px; font-weight:900; margin-top:2px;">🏦 借金 <span id="r-personal-debt-amt">$0</span>（純資産 <span id="r-personal-net">$0</span>）</div>
           <div class="sub" id="r-income-note">＋今日のインセンティブ報酬 <span id="r-incentive">0</span> USDT（採掘売上の20%）</div>
           <div class="assets-display" id="r-assets"></div>
         </div>
@@ -6341,11 +6342,11 @@ const HANAKO_START_AGE = 42;
 const MIRAI_START_AGE = 10;
 const FORCED_RETIREMENT_AGE = 65;     // 65歳で強制引退
 
-// 宝石5個の雛形
+// 宝石5個の雛形（注意：'ダイヤモンド'は SSR 級のみ＝水色は本物ダイヤだけ）
 const GEM_TEMPLATE = [
-  { tier: 'common', name: 'アクアマリン', sym: 'gem-aqua', coins: 400,  badge: 'R',   sfx: 'キラッ' },
-  { tier: 'common', name: 'アクアマリン', sym: 'gem-aqua', coins: 400,  badge: 'R',   sfx: 'キラッ' },
-  { tier: 'common', name: 'アクアマリン', sym: 'gem-aqua', coins: 400,  badge: 'R',   sfx: 'キラッ' },
+  { tier: 'common', name: 'エメラルド', sym: 'gem-aqua', coins: 400,  badge: 'R',   sfx: 'キラッ' },
+  { tier: 'common', name: 'エメラルド', sym: 'gem-aqua', coins: 400,  badge: 'R',   sfx: 'キラッ' },
+  { tier: 'common', name: 'エメラルド', sym: 'gem-aqua', coins: 400,  badge: 'R',   sfx: 'キラッ' },
   { tier: 'rare',   name: 'レッドスピネル', sym: 'gem-spinel', coins: 1500, badge: 'SR',  sfx: 'キラーン', mega: true },
   { tier: 'epic',   name: 'ダイヤモンド', sym: 'gem-dia', coins: 5000, badge: 'SSR', sfx: 'ドォォン', mega: true, flash: true },
 ];
@@ -10587,8 +10588,30 @@ function goResult() {
   _setText('r-shouseki',     game.shoushekiCount || 0);
   _setText('r-gems',         (game.gems || []).length);
   _setText('r-rond',         Math.floor(state.djm || 0).toLocaleString());
-  _setText('r-personal-usdt', (state.personal.usdt || 0).toFixed(2));
-  _setText('r-incentive',     incentiveUsdt.toFixed(2) + (passiveIncome ? ` (＋不動産収入 $${passiveIncome})` : ''));
+  _setText('r-incentive',    incentiveUsdt.toFixed(2) + (passiveIncome ? ` (＋不動産収入 $${passiveIncome})` : ''));
+  // 💰 個人ウォレット表示：負債があれば純資産（usdt-debt）も表示
+  const persUsdt = state.personal.usdt || 0;
+  const persDebt = state.personal.debt || 0;
+  const netPers = persUsdt - persDebt;
+  const usdtDispEl = document.getElementById('r-personal-usdt-display');
+  if (usdtDispEl) {
+    if (netPers < 0) {
+      usdtDispEl.innerHTML = `<span style="color:#ff7a7a;">$ -${Math.abs(netPers).toFixed(2)} USDT</span>`;
+    } else {
+      usdtDispEl.textContent = `$ ${persUsdt.toFixed(2)} USDT`;
+    }
+  }
+  // 借金表示（あれば）
+  const debtRowEl = document.getElementById('r-personal-debt');
+  if (debtRowEl) {
+    if (persDebt > 0) {
+      debtRowEl.style.display = '';
+      _setText('r-personal-debt-amt', `-$${persDebt.toFixed(2)}`);
+      _setText('r-personal-net', (netPers < 0 ? '-' : '') + '$' + Math.abs(netPers).toFixed(2));
+    } else {
+      debtRowEl.style.display = 'none';
+    }
+  }
   // 📝 モード別に注釈をラベル付け替え
   const incomeNote = document.getElementById('r-income-note');
   if (incomeNote) {
