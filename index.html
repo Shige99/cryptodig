@@ -15458,11 +15458,9 @@ function renderWallet() {
     } else debtRow.style.display = 'none';
   }
   // ボタン右上：会社ウォレットの表示残高
-  //   ランキングモード＝全通貨の市場換算合計（USDT + ROND*price + DJM*price）
-  //   個人モード＝USDTのみ
-  const isRankingMode = state.gameMode === 'ranking';
-  const displayBalance = isRankingMode
-    ? (typeof calcCompanyWealthMarket === 'function' ? calcCompanyWealthMarket() : (state.usdt || 0))
+  //   両モードとも全通貨の市場換算合計（USDT + ROND*price + DJM*price + ステーキング）
+  const displayBalance = (typeof calcCompanyWealthMarket === 'function')
+    ? calcCompanyWealthMarket()
     : (state.usdt || 0);
   const btnU = document.getElementById('wallet-btn-usdt');
   if (btnU) btnU.textContent = displayBalance.toFixed(2);
