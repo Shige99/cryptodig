@@ -1935,7 +1935,7 @@
     color: #1a1a1a;
     line-height: 1.3;
     animation: staffBubbleIn 0.4s ease-out;
-    pointer-events: auto;
+    pointer-events: none; /* クリックを通す（ボタンや採掘マスを隠さない） */
     cursor: default;
     z-index: 810;
   }
@@ -10020,7 +10020,23 @@ function hideFastForwardBanner() {
 //  - ライバル＆ゴーストプレイヤーの残り時間分の採掘を擬似計算して加算
 //  - dayElapsedをDAY_SECに進めてendDayをトリガ
 function fastForwardDay() {
-  if (!game || game.ended) return;
+  // 🛡 ガード：game が無い / 既に終了済みなら結果画面 or タイトルへフォールバック
+  if (!game) {
+    console.warn('fastForwardDay: game が無い → 鉱山選択へ復帰');
+    try { skipToMineSelect(); } catch(_){}
+    return;
+  }
+  if (game.ended) {
+    console.warn('fastForwardDay: 既に game.ended=true → 結果画面へ移行');
+    try {
+      // 結果画面が active で無ければ強制遷移
+      if (!document.getElementById('screen-result')?.classList.contains('active')) {
+        if (typeof endDay === 'function') endDay();
+        else showScreen('screen-result');
+      }
+    } catch(e) { console.warn(e); }
+    return;
+  }
   hideFastForwardBanner();
   // ローディング演出
   showBuyToast(
@@ -14856,6 +14872,12 @@ function _doUpgradeOffice(cost, next) {
   );
   try { updateAllHUD(); } catch(_){}
   try { renderCompanyPanel(); } catch(_){}
+  // 🔒 鉱山選択画面が開いてれば即再描画（鉱山ロックを最新Lvで判定し直す）
+  try {
+    if (document.getElementById('screen-select')?.classList.contains('active')) {
+      renderMineGrid();
+    }
+  } catch(_){}
   try { saveGame(); } catch(_){}
 }
 
