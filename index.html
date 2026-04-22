@@ -5937,8 +5937,8 @@ const LIFE_EVENTS = [
 // ================================================================
 // 👨‍👩‍👧 個人モード用ミッション（家族・ライフイベント系の人生ゲーム）
 const MISSIONS = [
-  { id: 'earn_100', title: '初任給', desc: '個人USDTを$100まで貯める', deadline: 7, check: s => s.personal.usdt >= 100, reward: { djm: 500, msg: '🎉 初任給達成！ +500 DJM' } },
-  { id: 'earn_1000', title: 'プチ貯金', desc: '個人USDTを$1,000まで貯める', deadline: 15, check: s => s.personal.usdt >= 1000, reward: { djm: 2000, msg: '💰 プチ貯金達成！ +2,000 DJM' } },
+  { id: 'earn_100', title: '初の100ドル', desc: '個人ウォレットを$100まで貯める（給料・イベント・売却なんでもOK）', deadline: 7, check: s => s.personal.usdt >= 100, reward: { djm: 500, msg: '🎉 個人ウォレット$100到達！ +500 DJM' } },
+  { id: 'earn_1000', title: 'プチ貯金', desc: '個人ウォレットを$1,000まで貯める', deadline: 15, check: s => s.personal.usdt >= 1000, reward: { djm: 2000, msg: '💰 プチ貯金達成！ +2,000 DJM' } },
   { id: 'buy_home', title: 'マイホーム', desc: '自宅を購入する', deadline: 30, check: s => s.personal.assets && s.personal.assets.some(a => a.name === '自宅'), reward: { djm: 5000, msg: '🏡 マイホーム達成！ +5,000 DJM' } },
   { id: 'found_company', title: '独立起業', desc: '会社を設立する', deadline: 60, check: s => s.personal.hasCompany, reward: { djm: 10000, usdt: 2000, msg: '🏢 独立起業！ +10,000 DJM + $2,000 USDT' } },
   { id: 'millionaire', title: 'ミリオネア', desc: '個人USDTを$10,000まで貯める', deadline: 90, check: s => s.personal.usdt >= 10000, reward: { djm: 20000, msg: '💎 ミリオネア！ +20,000 DJM' } },
@@ -14257,7 +14257,7 @@ const TUTORIAL_STEPS_PERSONAL = [
   {
     icon: '🎯',
     title: 'さあ、家族を幸せにするんや！',
-    text: '・個人USDT$100貯めたら初任給達成✨<br>・$10,000貯めたらミリオネア💎<br>・65歳で引退（貯金あれば悠々自適）<br>・支払い溜まりすぎると<strong style="color:#b93a3a;">倒産</strong>に注意！<br><br><strong style="color:#b8860b;">どうじまくんの人生を歩み始めよう！💪</strong>',
+    text: '・個人USDT$100貯めたら<strong>「初の100ドル」</strong>達成✨<br>・$10,000貯めたらミリオネア💎<br>・65歳で引退（貯金あれば悠々自適）<br>・支払い溜まりすぎると<strong style="color:#b93a3a;">倒産</strong>に注意！<br><br><strong style="color:#b8860b;">どうじまくんの人生を歩み始めよう！💪</strong>',
   },
 ];
 
