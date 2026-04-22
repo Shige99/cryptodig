@@ -14958,6 +14958,8 @@ function _doUpgradeOffice(cost, next) {
       renderMineGrid();
     }
   } catch(_){}
+  // 🎯 ミッション達成判定を即実行（rk_office_2 等の昇格系を遅延なく祝う）
+  try { checkMissions(); } catch(_){}
   try { saveGame(); } catch(_){}
 }
 
