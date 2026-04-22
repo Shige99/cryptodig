@@ -9487,8 +9487,8 @@ function appraiseAllDiamonds() {
 // 売却可能（gem-collected, appraised, asset）を全部売却
 function sellAllSellableItems() {
   if (!state.personal.rawDiamonds) return;
+  const isRanking = state.gameMode === 'ranking';
   const isEmployed = !state.personal.hasCompany;
-  const incentivePct = isEmployed ? COMPANY_DIA_INCENTIVE : 1.0;
   let totalPersonal = 0;
   let totalCompany = 0;
   let count = 0;
@@ -9496,22 +9496,49 @@ function sellAllSellableItems() {
   const remaining = [];
   state.personal.rawDiamonds.forEach(d => {
     const valueUsd = d.appraised?.valueUsd || d.valueUsd || 0;
-    if (d.status === 'gem-collected' || d.status === 'appraised' || d.status === 'asset') {
-      const personalGain = +(valueUsd * incentivePct).toFixed(2);
-      totalPersonal += personalGain;
-      if (isEmployed) {
-        totalCompany += +(valueUsd * (1 - COMPANY_DIA_INCENTIVE)).toFixed(2);
-      }
-      count++;
-    } else {
+    if (d.status !== 'gem-collected' && d.status !== 'appraised' && d.status !== 'asset') {
       remaining.push(d);
+      return;
+    }
+    // ダイヤモンド級判定（売却ルールに使う）
+    const isDiamondTier = d.tier === 'epic' || d.sym === 'gem-dia' || d.name === 'ダイヤモンド' || d.status === 'appraised' || d.status === 'asset';
+    let pGain = 0, cGain = 0;
+    if (isRanking) {
+      if (isDiamondTier) {
+        // ダイヤ級 → 50/50
+        pGain = +(valueUsd * CEO_DIAMOND_PERSONAL_PCT).toFixed(2);
+        cGain = +(valueUsd * (1 - CEO_DIAMOND_PERSONAL_PCT)).toFixed(2);
+      } else {
+        // 通常宝石 → 100%会社
+        cGain = +valueUsd.toFixed(2);
+      }
+    } else if (isEmployed) {
+      pGain = +(valueUsd * COMPANY_DIA_INCENTIVE).toFixed(2);
+      cGain = +(valueUsd * (1 - COMPANY_DIA_INCENTIVE)).toFixed(2);
+    } else {
+      // 個人モード社長 → 100%個人
+      pGain = +valueUsd.toFixed(2);
+    }
+    totalPersonal += pGain;
+    totalCompany += cGain;
+    count++;
+    // 結果画面レポート用：本日売上にも積算
+    if (isRanking && game) {
+      game.companyGemSalesUsd = (game.companyGemSalesUsd || 0) + cGain;
+      if (isDiamondTier) {
+        game.companyDiamondSalesUsd = (game.companyDiamondSalesUsd || 0) + cGain;
+        game.personalDiamondSalesUsd = (game.personalDiamondSalesUsd || 0) + pGain;
+      } else {
+        game.companyRegularGemSalesUsd = (game.companyRegularGemSalesUsd || 0) + cGain;
+      }
     }
   });
   if (count === 0) return;
   state.personal.rawDiamonds = remaining;
   state.personal.usdt += totalPersonal;
-  if (isEmployed) state.usdt += totalCompany;
-  snapshotWealth('mining', totalPersonal, `💎 ${count}個 一括売却 +$${totalPersonal.toFixed(2)}`);
+  state.usdt += totalCompany;
+  const totalSale = totalPersonal + totalCompany;
+  snapshotWealth('mining', totalSale, `💎 ${count}個 一括売却 +$${totalSale.toFixed(2)} ${isRanking ? '（個人$' + totalPersonal.toFixed(0) + '/会社$' + totalCompany.toFixed(0) + '）' : ''}`);
   // 🎵 一括売却SE：レジの連打＋大当たり
   try {
     SE.play('purchase');
@@ -9519,16 +9546,18 @@ function sellAllSellableItems() {
     setTimeout(() => SE.play('coin_tick'), 160);
     setTimeout(() => SE.play('coin_tick'), 240);
     setTimeout(() => SE.play('coin_tick'), 320);
-    if (totalPersonal >= 10000) setTimeout(() => SE.play('success_huge'), 420);
-    else if (totalPersonal >= 3000) setTimeout(() => SE.play('success_large'), 420);
+    if (totalSale >= 10000) setTimeout(() => SE.play('success_huge'), 420);
+    else if (totalSale >= 3000) setTimeout(() => SE.play('success_large'), 420);
     else setTimeout(() => SE.play('success_medium'), 420);
   } catch(_){}
   showBuyToast(
     `<div class="ttl">💎 ${count}個 一括売却完了！</div>
-     <div class="amt">+$${totalPersonal.toFixed(2)} USDT</div>
-     <div style="font-size:11px;margin-top:6px;">${isEmployed ? `(会社収入 +$${totalCompany.toFixed(2)})` : ''}</div>`,
+     <div class="amt">+$${totalSale.toFixed(2)} USDT</div>
+     <div style="font-size:11px;margin-top:6px;">${(totalPersonal > 0 && totalCompany > 0) ? `個人+$${totalPersonal.toFixed(2)} ／ 会社+$${totalCompany.toFixed(2)}` : ''}</div>`,
     '#3a7a4a'
   );
+  // 結果画面の経費レポートも更新
+  try { refreshResultExpensesIfActive(); } catch(_){}
   saveGame();
   renderAppraiserModal();
   showAppraiserHint();
@@ -11286,7 +11315,13 @@ function checkMissions() {
         if (m.reward.djm) state.djm += m.reward.djm;
         if (m.reward.usdt) state.personal.usdt += m.reward.usdt;
         // 🎉 派手な即時演出（日付をまたがずその場で）
-        showMissionCompleteOverlay(m);
+        //    💎 ダイヤ発見オーバーレイ等が表示中なら、それが消えてから(5.5s後)出す
+        const diaOverlay = document.querySelector('.diamond-discovery-overlay');
+        if (diaOverlay) {
+          setTimeout(() => showMissionCompleteOverlay(m), 5500);
+        } else {
+          showMissionCompleteOverlay(m);
+        }
       } else if (m.deadline === state.day && !state.missionsCompleted.includes(m.id)) {
         // 🎵 期限超過＝軽い絶望
         SE.play('news_bad');
@@ -11316,7 +11351,7 @@ function showMissionCompleteOverlay(m) {
   const ov = document.createElement('div');
   ov.id = 'mission-complete-overlay';
   ov.style.cssText = `
-    position: fixed; inset: 0; z-index: 99800;
+    position: fixed; inset: 0; z-index: 99990;
     display: flex; align-items: center; justify-content: center;
     background: radial-gradient(ellipse at center, rgba(90,62,122,0.85) 0%, rgba(0,0,0,0.7) 70%);
     animation: mcOverlayFade 0.4s ease;
