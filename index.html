@@ -7305,13 +7305,13 @@ function renderShop() {
     }
     // 価格行：USDT/ROND/DJM の有るものを順に表示
     const priceLines = [];
-    if (pick.priceUsdt) priceLines.push(`<div class="p-djm" style="color:#26a17b; font-size:13px; font-weight:900;">$${pick.priceUsdt.toLocaleString()} USDT 💵</div>`);
+    if (pick.priceUsdt) priceLines.push(`<div style="background:linear-gradient(90deg,#0d4d3a,#26a17b); color:#fff; padding:4px 8px; font-size:13px; font-weight:900; text-align:center; border:2px solid #1a1a1a; box-shadow:1px 1px 0 #000; letter-spacing:1px;">💵 $${pick.priceUsdt.toLocaleString()} USDT</div>`);
     if (pick.priceRond) priceLines.push(`<div class="p-rond">${pick.priceRond.toLocaleString()} ROND</div>`);
     if (pick.priceDjm) priceLines.push(`<div class="p-djm">${pick.priceDjm.toLocaleString()} DJM ⭐ ${saveRate >= 5 ? `<span style="display:inline-block; background:#b93a3a; color:#fff; font-size:9px; padding:1px 4px; margin-left:4px; font-weight:900;">${saveRate.toFixed(0)}% OFF!</span>` : ''}</div>`);
     // 購入ボタン（モード別 + 縛り条件）
     const buttons = [];
     if (pick.priceUsdt) {
-      buttons.push(`<button class="buy" style="background:${canUsdt && !isLocked ? '#26a17b' : '#888'}; color:#fff;" onclick="buyPickaxe('${pick.id}', 'usdt')" ${isLocked || !canUsdt ? 'disabled' : ''}>${isLocked ? '🔒 解放条件' : (canUsdt ? '💵 USDTで買う' : '残高不足')}</button>`);
+      buttons.push(`<button class="buy" style="background:${canUsdt && !isLocked ? 'linear-gradient(135deg,#0d4d3a,#26a17b)' : '#888'}; color:#fff; border:2px solid #1a1a1a; box-shadow:1px 1px 0 #000;" onclick="buyPickaxe('${pick.id}', 'usdt')" ${isLocked || !canUsdt ? 'disabled' : ''}>${isLocked ? '🔒 解放条件' : (canUsdt ? '💵 USDTで買う' : '残高不足')}</button>`);
     }
     if (pick.priceRond) {
       buttons.push(`<button class="buy" style="${canRond && !isLocked ? '' : 'background:#888; color:#fff;'}" onclick="buyPickaxe('${pick.id}', 'rond')" ${isLocked || !canRond ? 'disabled' : ''}>${isLocked ? '🔒' : (canRond ? 'RONDで買う' : '残高不足')}</button>`);
@@ -10598,15 +10598,45 @@ function openBuyPickaxe() {
   const grid = document.getElementById('buy-grid');
   grid.innerHTML = '';
   PICKAXES.forEach(pick => {
-    const canRond = state.rond >= pick.priceRond;
-    const canDjm = state.djm >= pick.priceDjm;
-    const tierColor = pick.tier === '特大' ? '#ff00aa'
+    // 解放条件チェック
+    const gate = canBuyPickaxe(pick);
+    const isLocked = !gate.ok;
+    const canRond = pick.priceRond ? state.rond >= pick.priceRond : false;
+    const canDjm = pick.priceDjm ? state.djm >= pick.priceDjm : false;
+    const canUsdt = pick.priceUsdt ? (state.usdt || 0) >= pick.priceUsdt : false;
+    const tierColor = pick.tier === '神話' ? '#ff00aa'
+                    : pick.tier === '超大' ? '#1a6a8a'
+                    : pick.tier === '特大' ? '#ff00aa'
                     : pick.tier === '大'   ? '#ffd700'
                     : pick.tier === '中'   ? '#b8860b' : '#888';
     const card = document.createElement('div');
     card.className = 'pick-card';
-    card.style.cssText = 'background:#fff; border:2px solid #1a1a1a; padding:8px;';
+    card.style.cssText = 'background:#fff; border:2px solid #1a1a1a; padding:8px; position:relative;' + (isLocked ? 'opacity:0.6; filter:grayscale(40%);' : '');
+    // 価格行（あるものだけ）
+    const priceRows = [];
+    if (pick.priceUsdt) priceRows.push(`<div style="background:linear-gradient(90deg,#0d4d3a,#26a17b); color:#fff; padding:4px 6px; text-align:center; font-weight:900; border:2px solid #1a1a1a; box-shadow:1px 1px 0 #000; letter-spacing:1px;">💵 $${pick.priceUsdt.toLocaleString()} USDT</div>`);
+    if (pick.priceRond) priceRows.push(`<div style="background:#5a3e7a; color:#fff; padding:3px 6px; text-align:center; font-weight:900;">${pick.priceRond.toLocaleString()} ROND</div>`);
+    if (pick.priceDjm) priceRows.push(`<div style="background:#b8860b; color:#fff; padding:3px 6px; text-align:center; font-weight:900;">${pick.priceDjm.toLocaleString()} DJM</div>`);
+    // ボタン（あるものだけ）
+    const btns = [];
+    if (pick.priceUsdt) {
+      btns.push(`<button class="buy" onclick="inGameBuyPickaxe('${pick.id}', 'usdt')" ${isLocked || !canUsdt ? 'disabled' : ''} style="flex:1; background:${!isLocked && canUsdt ? 'linear-gradient(135deg,#0d4d3a,#26a17b)' : '#999'}; color:#fff; padding:6px 4px; border:2px solid #1a1a1a; font-weight:900; font-size:11px; cursor:${isLocked || !canUsdt ? 'not-allowed' : 'pointer'};">${isLocked ? '🔒' : (canUsdt ? '💵 USDT' : '残高不足')}</button>`);
+    }
+    if (pick.priceRond) {
+      btns.push(`<button class="buy" onclick="inGameBuyPickaxe('${pick.id}', 'rond')" ${isLocked || !canRond ? 'disabled' : ''} style="flex:1; background:${!isLocked && canRond ? '#5a3e7a' : '#999'}; color:#fff; padding:6px 4px; border:2px solid #1a1a1a; font-weight:900; font-size:11px; cursor:${isLocked || !canRond ? 'not-allowed' : 'pointer'};">${isLocked ? '🔒' : (canRond ? 'RONDで買う' : '残高不足')}</button>`);
+    }
+    if (pick.priceDjm) {
+      btns.push(`<button class="buy djm" onclick="inGameBuyPickaxe('${pick.id}', 'djm')" ${isLocked || !canDjm ? 'disabled' : ''} style="flex:1; background:${!isLocked && canDjm ? '#b8860b' : '#999'}; color:#fff; padding:6px 4px; border:2px solid #1a1a1a; font-weight:900; font-size:11px; cursor:${isLocked || !canDjm ? 'not-allowed' : 'pointer'};">${isLocked ? '🔒' : (canDjm ? 'DJMで買う' : '残高不足')}</button>`);
+    }
+    // 神話の本日購入数表示
+    let mythicLeft = '';
+    if (pick.dailyLimit) {
+      const used = _getDailyMythicCount();
+      const left = Math.max(0, pick.dailyLimit - used);
+      mythicLeft = `<div style="font-size:9px; color:${left > 0 ? '#ffd700' : '#b93a3a'}; text-align:center; margin-top:3px; font-weight:900;">本日 ${left}/${pick.dailyLimit} 本</div>`;
+    }
     card.innerHTML = `
+      ${pick.badge ? `<div style="position:absolute; top:-6px; right:-6px; background:linear-gradient(135deg,#ff00aa,#ffd700); color:#fff; font-size:8px; font-weight:900; padding:2px 5px; border:2px solid #1a1a1a; box-shadow:1px 1px 0 #000; letter-spacing:1px; z-index:5;">${pick.badge}</div>` : ''}
       <div class="name" style="font-size:13px; font-weight:900; text-align:center;">${pick.name}</div>
       <div class="visual" style="text-align:center; margin:4px 0;"><svg width="40" height="40"><use href="#${pick.sym}"/></svg></div>
       <div class="stats" style="font-size:10px; line-height:1.4; text-align:left; padding:0 4px;">
@@ -10616,12 +10646,12 @@ function openBuyPickaxe() {
         <div>⏱ 掘削 <b>${pick.drillSec}秒/マス</b></div>
       </div>
       <div class="price-dual" style="margin-top:6px; display:flex; flex-direction:column; gap:3px; font-size:10px;">
-        <div class="p-rond" style="background:#5a3e7a; color:#fff; padding:3px 6px; text-align:center; font-weight:900;">${pick.priceRond.toLocaleString()} ROND</div>
-        <div class="p-djm" style="background:#b8860b; color:#fff; padding:3px 6px; text-align:center; font-weight:900;">${pick.priceDjm.toLocaleString()} DJM</div>
+        ${priceRows.join('')}
       </div>
-      <div class="buy-row" style="display:flex; gap:4px; margin-top:6px;">
-        <button class="buy" onclick="inGameBuyPickaxe('${pick.id}', 'rond')" style="flex:1; background:${canRond ? '#5a3e7a' : '#999'}; color:#fff; padding:6px 4px; border:2px solid #1a1a1a; font-weight:900; font-size:11px; cursor:pointer;">${canRond ? 'RONDで買う' : '残高不足'}</button>
-        <button class="buy djm" onclick="inGameBuyPickaxe('${pick.id}', 'djm')" style="flex:1; background:${canDjm ? '#b8860b' : '#999'}; color:#fff; padding:6px 4px; border:2px solid #1a1a1a; font-weight:900; font-size:11px; cursor:pointer;">${canDjm ? 'DJMで買う' : '残高不足'}</button>
+      ${isLocked ? `<div style="background:rgba(185,58,58,0.15); border:1px dashed #b93a3a; color:#b93a3a; font-size:9px; font-weight:900; text-align:center; padding:3px; margin-top:3px;">🔒 ${gate.reason}</div>` : ''}
+      ${mythicLeft}
+      <div class="buy-row" style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;">
+        ${btns.join('')}
       </div>`;
     grid.appendChild(card);
   });
@@ -14201,8 +14231,8 @@ const TUTORIAL_STEPS_PERSONAL = [
   },
   {
     icon: '🛒',
-    title: 'STEP 5：つるはし購入',
-    text: '鉱山を選んだらショップ画面へ。<br><strong>ROND か DJM でつるはしを購入</strong><br>・激安(耐久8)…初心者用<br>・ベーシック(耐久18)…標準<br>・プレミアム(耐久30/同時2マス)…効率UP<br>・黄金(耐久50/同時3マス)…最強<br>複数本まとめ買いもOK！',
+    title: 'STEP 5：つるはし購入（全6種・縛りあり）',
+    text: '鉱山を選んだらショップ画面へ。<br><strong>ROND・DJM・USDT でつるはしを購入</strong><br><br>📦 <strong>通常モデル（ランクで解放）</strong>：<br>・激安(耐久8)…初心者用<br>・ベーシック(耐久18)…標準<br>・プレミアム(耐久30/同時2マス)…<strong style="color:#b8860b;">Lv.2 から</strong><br>・黄金(耐久50/同時3マス)…<strong style="color:#ffd700;">Lv.3 から</strong>（最強の社員昇格ルート）<br><br>💎 <strong style="color:#26a17b;">高級モデル（USDT直販・縛りなし）</strong>：<br>・<strong style="color:#1a6a8a;">💎 ダイヤつるはし</strong>（耐久60/同時3マス/速度1.3秒）<br>　$3,000 USDT or 50万DJM／オフィスLv.2以上<br>・<strong style="color:#ff00aa;">👑 神話のつるはし</strong>（耐久100/同時4マス/速度1.0秒）<br>　$30,000 USDT／オフィスLv.4以上／<strong>1日1本まで</strong><br><br>💵 <strong>USDT直販</strong>＝アービで稼いだ資金で「時間を買う」ルート！<br>複数本まとめ買いもOK！',
   },
   {
     icon: '⛏',
@@ -14276,8 +14306,8 @@ const TUTORIAL_STEPS_RANKING = [
   },
   {
     icon: '⛏',
-    title: 'STEP 7：{{name}}、爆掘りせよ',
-    text: '独立社長の{{name}}は資本あるから、<strong>黄金つるはし（耐久50/同時3マス）</strong>も序盤から狙える！<br><br>岩をタップして掘削 → DJM/宝石ゲット。<br>ライバル（マキシー、SilverRush商会、他プレイヤー）より先にお宝マスを掘るのが勝負や！',
+    title: 'STEP 7：{{name}}、つるはしの選択肢（全6種）',
+    text: '採掘装備＝つるはしは<strong style="color:#ffd700;">全6種類</strong>！状況で使い分けや：<br><br>📦 <strong>通常モデル（縛りあり）</strong>：<br>・激安(耐久8)…誰でも<br>・ベーシック(耐久18)…誰でも<br>・プレミアム(耐久30/同時2マス)…<strong>C級社員 or オフィスLv.2</strong><br>・黄金(耐久50/同時3マス)…<strong>S級社員 or オフィスLv.4</strong>（社員ガチャの動機！）<br><br>💎 <strong style="color:#26a17b;">高級モデル（USDT直販・縛りなし）</strong>：<br>・<strong style="color:#1a6a8a;">💎 ダイヤつるはし</strong>（耐久60/同時3マス/速度1.3秒）<br>　$3,000 USDT or 50万DJM／オフィスLv.2以上<br>・<strong style="color:#ff00aa;">👑 神話のつるはし</strong>（耐久100/同時4マス/速度1.0秒）<br>　$30,000 USDT／オフィスLv.4以上／<strong>1日1本まで</strong><br><br>💵 <strong>USDT直販</strong>＝アービで稼いだ会社資金で「時間を買う」。社員育成と並行で経営の幅が広がる！<br><br>岩をタップして掘削 → DJM/宝石ゲット。<br>ライバル（マキシー、他プレイヤー）より先にお宝マスを掘るのが勝負や！',
   },
   {
     icon: '💎',
