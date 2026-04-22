@@ -9031,18 +9031,26 @@ function renderAppraiserModal() {
   const content = document.getElementById('appraiser-content');
   if (!state.personal.rawDiamonds) state.personal.rawDiamonds = [];
   const diamonds = state.personal.rawDiamonds;
+  const isRanking = state.gameMode === 'ranking';
   const isEmployed = !state.personal.hasCompany; // 会社員 = 自分で会社を持ってない（HORUNの社員）
+  // 売却ルール表記
+  let saleRuleHtml;
+  if (isRanking) {
+    saleRuleHtml = '<span style="color:#ffd700;">🏆 ランキング社長 → ダイヤ売却額の <b>50%が個人</b>＋<b>50%が会社</b>（社長の役得！）／ 通常宝石は <b>100%会社</b></span>';
+  } else if (isEmployed) {
+    saleRuleHtml = '<span style="color:#ffd700;">🏢 HORUN採掘 の会社員 → 売却額の <b>20%</b> がインセンティブとして個人ウォレットに入ります（残80%は会社）</span>';
+  } else {
+    saleRuleHtml = '<span style="color:#ffd700;">🎩 独立社長 → 売却額の <b>100%</b> が個人ウォレットに入ります</span>';
+  }
   let body = `
     <h2>💎 鑑定所「眉毛宝石店」</h2>
     <div class="subtitle">
       原石の正式な価値を確定します。鑑定後にUSDT売却 or 資産保有を選択。<br>
-      ${isEmployed
-        ? '<span style="color:#ffd700;">🏢 あなたは現在 HORUN採掘 の会社員 → 売却額の <b>20%</b> がインセンティブとして個人ウォレットに入ります</span>'
-        : '<span style="color:#ffd700;">🎩 あなたは独立社長 → 売却額の <b>100%</b> が個人ウォレットに入ります</span>'}
+      ${saleRuleHtml}
     </div>
     <div class="appraiser-fee-notice">
-      💵 鑑定料：<b style="color:#ffd700;">$${APPRAISAL_FEE}/個</b>（${isEmployed ? '<b style="color:#7ae890;">会社が負担</b>' : '個人USDTから引落し'}）｜
-      ${isEmployed
+      💵 鑑定料：<b style="color:#ffd700;">$${APPRAISAL_FEE}/個</b>（${(isRanking || isEmployed) ? '<b style="color:#7ae890;">会社が負担</b>' : '個人USDTから引落し'}）｜
+      ${(isRanking || isEmployed)
         ? `会社残高：<b style="color:#ffd700;">$${state.usdt.toFixed(2)}</b>`
         : `個人残高：<b style="color:#ffd700;">$${state.personal.usdt.toFixed(2)}</b>`}
     </div>
@@ -9067,8 +9075,17 @@ function renderAppraiserModal() {
             </div>
           </div>`;
       } else if (d.status === 'appraised') {
-        const incentivePct = isEmployed ? COMPANY_DIA_INCENTIVE : 1.0;
-        const incentiveAmt = Math.floor(d.appraised.valueUsd * incentivePct * 100) / 100;
+        // 取り分の計算（モード別）
+        let takeText = '';
+        if (isRanking) {
+          const personal50 = +(d.appraised.valueUsd * CEO_DIAMOND_PERSONAL_PCT).toFixed(2);
+          const company50 = +(d.appraised.valueUsd * (1 - CEO_DIAMOND_PERSONAL_PCT)).toFixed(2);
+          takeText = `<div class="rdi-meta" style="color:#ff00aa;">▶ 個人 +<b>$${personal50.toFixed(2)}</b> ／ 会社 +<b>$${company50.toFixed(2)}</b>（社長の役得 50/50）</div>`;
+        } else if (isEmployed) {
+          const incentiveAmt = +(d.appraised.valueUsd * COMPANY_DIA_INCENTIVE).toFixed(2);
+          takeText = `<div class="rdi-meta" style="color:#7ae890;">▶ あなたの取り分：<b>$${incentiveAmt.toFixed(2)}</b>（20%インセンティブ）</div>`;
+        }
+        // 個人モード社長は100%個人なので注釈不要
         body += `
           <div class="raw-dia-item graded">
             <svg width="50" height="50"><use href="#diamond-cut"/></svg>
@@ -9079,7 +9096,7 @@ function renderAppraiserModal() {
                 カラー <b>${d.appraised.color}</b> ／ クラリティ <b>${d.appraised.clarity}</b>
               </div>
               <div class="rdi-meta" style="color:#ffd700;">💰 査定額 <b style="font-size:14px;">$${d.appraised.valueUsd.toLocaleString()}</b></div>
-              ${isEmployed ? `<div class="rdi-meta" style="color:#7ae890;">▶ あなたの取り分：<b>$${incentiveAmt.toFixed(2)}</b>（20%インセンティブ）</div>` : ''}
+              ${takeText}
             </div>
             <div class="rdi-actions">
               <button class="rdi-btn sell" onclick="sellDiamond(${i})">💵 USDT売却</button>
@@ -9104,8 +9121,13 @@ function renderAppraiserModal() {
           </div>`;
       } else if (d.status === 'gem-collected') {
         // 採取済みの宝石：鑑定不要、即売却可能
-        const incentivePct = isEmployed ? COMPANY_DIA_INCENTIVE : 1.0;
-        const incentiveAmt = +(d.valueUsd * incentivePct).toFixed(2);
+        let gemTakeText = '';
+        if (isRanking) {
+          gemTakeText = `<div class="rdi-meta" style="color:#7ae890;">▶ <b>100%会社ウォレット</b>に入金（通常宝石）</div>`;
+        } else if (isEmployed) {
+          const incentiveAmt = +(d.valueUsd * COMPANY_DIA_INCENTIVE).toFixed(2);
+          gemTakeText = `<div class="rdi-meta" style="color:#7ae890;">▶ あなたの取り分：<b>$${incentiveAmt.toFixed(2)}</b>（20%）</div>`;
+        }
         body += `
           <div class="raw-dia-item graded">
             <svg width="50" height="50"><use href="#${d.sym}"/></svg>
@@ -9116,7 +9138,7 @@ function renderAppraiserModal() {
                 ${d.carat ? `${d.carat.toFixed(2)}ct ／ ` : ''}⛏ ${d.mineName}
               </div>
               <div class="rdi-meta" style="color:#ffd700;">💰 価値 <b style="font-size:14px;">$${d.valueUsd.toLocaleString()}</b></div>
-              ${isEmployed ? `<div class="rdi-meta" style="color:#7ae890;">▶ あなたの取り分：<b>$${incentiveAmt.toFixed(2)}</b>（20%）</div>` : ''}
+              ${gemTakeText}
             </div>
             <div class="rdi-actions">
               <button class="rdi-btn sell" onclick="sellGemFromCollection(${i})">💵 これを売却</button>
@@ -9226,6 +9248,8 @@ function sellAllSellableItems() {
   renderAppraiserModal();
   showAppraiserHint();
   if (game) updateAllHUD();
+  // 結果画面が開いてれば経費レポート再描画
+  refreshResultExpensesIfActive();
 }
 
 function appraiseAndShow(idx) {
@@ -9339,6 +9363,8 @@ function sellDiamond(idx) {
   renderAppraiserModal();
   showAppraiserHint();
   if (game) updateAllHUD();
+  // 結果画面が開いてれば経費レポート再描画
+  refreshResultExpensesIfActive();
 }
 
 // 採取済み宝石（gem-collected）を売却
@@ -9389,6 +9415,8 @@ function sellGemFromCollection(idx) {
   renderAppraiserModal();
   showAppraiserHint();
   if (game) updateAllHUD();
+  // 結果画面が開いてれば経費レポート再描画
+  refreshResultExpensesIfActive();
 }
 
 // 採取済み宝石を資産保有
@@ -10596,6 +10624,13 @@ function goResult() {
   saveGame();
 }
 
+// 結果画面が表示中なら経費レポートを再描画（売却・採用・解雇後の同期）
+function refreshResultExpensesIfActive() {
+  const screen = document.getElementById('screen-result');
+  if (!screen || !screen.classList.contains('active')) return;
+  try { renderResultCompanyExpenses(); } catch(_){}
+}
+
 // 🏢 ランキングモードの結果画面：会社経費レポート描画
 function renderResultCompanyExpenses() {
   const panel = document.getElementById('result-company-expenses');
@@ -11272,16 +11307,16 @@ function updateAllHUD() {
   if (itemSection) itemSection.style.display = isRanking ? 'none' : '';
   const shopItemsTab = document.getElementById('tab-btn-items');
   if (shopItemsTab) shopItemsTab.style.display = isRanking ? 'none' : '';
-  // 🧑‍💼 ランキングモード：社員サマリー更新＆吹き出しローテ起動
+  // 🧑‍💼 モード別UI：ランキング社員サマリー / 吹き出しローテーション
   try {
     if (isRanking) {
       renderEmployeesSummary();
-      startStaffQuoteRotation();
     } else {
       const summaryEl = document.getElementById('char-employees-summary');
       if (summaryEl) { summaryEl.style.display = 'none'; summaryEl.innerHTML = ''; }
-      stopStaffQuoteRotation();
     }
+    // 🗨️ 吹き出しローテは両モードとも開始（採掘画面でのみ実際に出る）
+    startStaffQuoteRotation();
     // 🏢 会社ブーストバナーを更新（現在の採掘DJM・速度ボーナスを可視化）
     renderCompanyBoostBanner();
     // 🏢 会社詳細ボタンの表示/値更新
@@ -14446,9 +14481,42 @@ function renderEmployeesSummary() {
   `;
 }
 
-// 🗨️ 採掘画面に社員の吹き出しをフローティング生成
+// 🗨️ 個人モード：ほるん／はるきち／いんぐちゃん の吹き出しを生成
+const PERSONAL_CHAR_DEFS = [
+  { key: 'horun',     name: 'ほるん社長', sym: 'horun',     color: '#b93a3a' },
+  { key: 'harukichi', name: 'はるきち',   sym: 'harukichi', color: '#d4a64a' },
+  { key: 'ing',       name: 'いんぐちゃん', sym: 'ing',     color: '#5a3e7a' },
+];
+function spawnPersonalBubble(charKey, quote) {
+  const def = PERSONAL_CHAR_DEFS.find(d => d.key === charKey);
+  if (!def || !quote) return;
+  // SVGシンボルをアバター代わりに使う
+  const avatarHtml = `<svg width="34" height="34" viewBox="0 0 60 80"><use href="#${def.sym}"/></svg>`;
+  spawnBubbleGeneric({
+    avatarHtml,
+    name: def.name,
+    nameBadge: '',
+    nameBadgeColor: def.color,
+    quote,
+  });
+}
+// 🗨️ 採掘画面に社員の吹き出しをフローティング生成（ランキングモード用）
 function spawnStaffBubble(employee, quote) {
   if (!employee || !quote) return;
+  const ri = (typeof getStaffRankInfo === 'function') ? getStaffRankInfo(employee.rank || 'E') : null;
+  const avatarHtml = employee.avatar
+    ? (typeof renderAvatarSVG === 'function' ? renderAvatarSVG(employee.avatar, {size: 30}) : '👤')
+    : '👤';
+  spawnBubbleGeneric({
+    avatarHtml,
+    name: employee.name || '社員',
+    nameBadge: ri ? ri.rank : '',
+    nameBadgeColor: ri ? ri.grad : '#1a1a1a',
+    quote,
+  });
+}
+// 🗨️ 共通の吹き出し生成器
+function spawnBubbleGeneric({ avatarHtml, name, nameBadge, nameBadgeColor, quote }) {
   const mine = document.getElementById('mine');
   if (!mine) return;
   // 吹き出し用コンテナを確保
@@ -14474,11 +14542,9 @@ function spawnStaffBubble(employee, quote) {
   const left = 20 + Math.random() * (maxLeft - 20);
   const top  = 20 + Math.random() * (maxTop - 20);
 
-  const ri = getStaffRankInfo(employee.rank || 'E');
-  const avatarHtml = employee.avatar
-    ? (typeof renderAvatarSVG === 'function' ? renderAvatarSVG(employee.avatar, {size: 30}) : '👤')
-    : '👤';
-
+  const badgeHtml = nameBadge
+    ? `<span class="sb-rank" style="background:${nameBadgeColor || '#1a1a1a'};">${_escHtml(nameBadge)}</span>`
+    : '';
   const bubble = document.createElement('div');
   bubble.className = 'staff-bubble';
   bubble.style.left = left + 'px';
@@ -14486,7 +14552,7 @@ function spawnStaffBubble(employee, quote) {
   bubble.innerHTML = `
     <div class="sb-avatar">${avatarHtml}</div>
     <div class="sb-content">
-      <div class="sb-name"><span class="sb-rank" style="background:${ri.grad};">${ri.rank}</span>${_escHtml(employee.name || '社員')}</div>
+      <div class="sb-name">${badgeHtml}${_escHtml(name || '？')}</div>
       <div class="sb-msg">${_escHtml(quote)}</div>
     </div>
   `;
@@ -14496,19 +14562,30 @@ function spawnStaffBubble(employee, quote) {
   setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 6550);
 }
 
-// 🗨️ 社員ローテーション（吹き出し方式）：4〜5秒おきに誰かが話す
+// 🗨️ キャラクター会話ローテーション（モード両対応）
+//    ランキングモード：社員ガチャで採用した社員が話す
+//    個人モード：ほるん／はるきち／いんぐちゃんが話す
 let _staffQuoteTimer = null;
 function _spawnOneRandomBubble() {
-  if (state?.gameMode !== 'ranking') return;
   if (!document.getElementById('screen-game')?.classList.contains('active')) return;
-  const employees = state?.company?.employees || [];
-  if (employees.length === 0) return;
-  const nonAbsent = employees.filter(e => e.todayStatus !== 'absent');
-  const pool = nonAbsent.length > 0 ? nonAbsent : employees;
-  const e = pool[Math.floor(Math.random() * pool.length)];
-  if (!e) return;
-  const quote = e.todayStatusMsg || (typeof pickStaffQuote === 'function' ? pickStaffQuote(e) : '…');
-  try { spawnStaffBubble(e, quote); } catch(err) { console.warn('bubble err', err); }
+  const isRanking = state?.gameMode === 'ranking';
+  if (isRanking) {
+    // ランキングモード：社員からランダム
+    const employees = state?.company?.employees || [];
+    if (employees.length === 0) return;
+    const nonAbsent = employees.filter(e => e.todayStatus !== 'absent');
+    const pool = nonAbsent.length > 0 ? nonAbsent : employees;
+    const e = pool[Math.floor(Math.random() * pool.length)];
+    if (!e) return;
+    const quote = e.todayStatusMsg || (typeof pickStaffQuote === 'function' ? pickStaffQuote(e) : '…');
+    try { spawnStaffBubble(e, quote); } catch(err) { console.warn('bubble err', err); }
+  } else {
+    // 個人モード：ほるん / はるきち / いんぐちゃんからランダム
+    const charKey = ['horun', 'harukichi', 'ing'][Math.floor(Math.random() * 3)];
+    const quote = (typeof pickDailyQuote === 'function') ? pickDailyQuote(charKey) : '…';
+    if (!quote) return;
+    try { spawnPersonalBubble(charKey, quote); } catch(err) { console.warn('bubble err', err); }
+  }
 }
 function startStaffQuoteRotation() {
   if (_staffQuoteTimer) return; // 既に動いてたら何もしない（重複interval回避）
@@ -14559,6 +14636,8 @@ async function hireNewStaff() {
   try { renderCompanyPanel(); } catch(_){}
   try { renderLeftSideEmployees(); } catch(_){}
   try { renderCompanyBoostBanner(); } catch(_){}
+  // 結果画面が開いてれば経費レポート再描画（給料人数を最新化）
+  try { refreshResultExpensesIfActive(); } catch(_){}
   saveGame();
 }
 
@@ -14668,6 +14747,8 @@ async function fireStaff(empId) {
   try { renderCompanyPanel(); } catch(_){}
   try { renderLeftSideEmployees(); } catch(_){}
   try { renderCompanyBoostBanner(); } catch(_){}
+  // 結果画面が開いてれば経費レポート再描画
+  try { refreshResultExpensesIfActive(); } catch(_){}
   saveGame();
 }
 
