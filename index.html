@@ -9121,9 +9121,16 @@ function renderAppraiserModal() {
           </div>`;
       } else if (d.status === 'gem-collected') {
         // 採取済みの宝石：鑑定不要、即売却可能
+        const isDiamondTier = d.tier === 'epic' || d.sym === 'gem-dia' || d.name === 'ダイヤモンド';
         let gemTakeText = '';
         if (isRanking) {
-          gemTakeText = `<div class="rdi-meta" style="color:#7ae890;">▶ <b>100%会社ウォレット</b>に入金（通常宝石）</div>`;
+          if (isDiamondTier) {
+            const p50 = +(d.valueUsd * CEO_DIAMOND_PERSONAL_PCT).toFixed(2);
+            const c50 = +(d.valueUsd * (1 - CEO_DIAMOND_PERSONAL_PCT)).toFixed(2);
+            gemTakeText = `<div class="rdi-meta" style="color:#ff00aa;">▶ 個人 +<b>$${p50.toFixed(2)}</b> ／ 会社 +<b>$${c50.toFixed(2)}</b>（社長の役得 50/50）</div>`;
+          } else {
+            gemTakeText = `<div class="rdi-meta" style="color:#7ae890;">▶ <b>100%会社ウォレット</b>に入金（通常宝石）</div>`;
+          }
         } else if (isEmployed) {
           const incentiveAmt = +(d.valueUsd * COMPANY_DIA_INCENTIVE).toFixed(2);
           gemTakeText = `<div class="rdi-meta" style="color:#7ae890;">▶ あなたの取り分：<b>$${incentiveAmt.toFixed(2)}</b>（20%）</div>`;
@@ -9376,15 +9383,33 @@ function sellGemFromCollection(idx) {
   if (!d || d.status !== 'gem-collected') return;
   const isRanking = state.gameMode === 'ranking';
   const isEmployed = !state.personal.hasCompany;
-  // 💰 売却先のルール（通常宝石は100%会社）
+  // 💰 売却先のルール
+  //   ランキングモード（社長）：
+  //     epic/ダイヤモンド級 → 50/50（社長の役得）
+  //     それ以外（輝石/通常宝石） → 100%会社
+  //   個人モード社員 → 20%個人＋80%会社
+  //   個人モード社長 → 100%個人
+  const isDiamondTier = d.tier === 'epic' || d.sym === 'gem-dia' || d.name === 'ダイヤモンド';
   let personalGain = 0, companyShare = 0;
   if (isRanking) {
-    companyShare = +d.valueUsd.toFixed(2);
-    state.usdt += companyShare;
-    if (!game) game = {};
-    game.companyGemSalesUsd = (game.companyGemSalesUsd || 0) + companyShare;
-    // 通常宝石専用トラッキング（結果画面レポートのブレイクダウン用）
-    game.companyRegularGemSalesUsd = (game.companyRegularGemSalesUsd || 0) + companyShare;
+    if (isDiamondTier) {
+      // ダイヤモンド級は社長の役得で 50/50
+      personalGain = +(d.valueUsd * CEO_DIAMOND_PERSONAL_PCT).toFixed(2);
+      companyShare = +(d.valueUsd * (1 - CEO_DIAMOND_PERSONAL_PCT)).toFixed(2);
+      state.personal.usdt += personalGain;
+      state.usdt += companyShare;
+      if (!game) game = {};
+      game.companyGemSalesUsd = (game.companyGemSalesUsd || 0) + companyShare;
+      game.companyDiamondSalesUsd = (game.companyDiamondSalesUsd || 0) + companyShare;
+      game.personalDiamondSalesUsd = (game.personalDiamondSalesUsd || 0) + personalGain;
+    } else {
+      // 通常宝石（アクアマリン、レッドスピネル等）は100%会社
+      companyShare = +d.valueUsd.toFixed(2);
+      state.usdt += companyShare;
+      if (!game) game = {};
+      game.companyGemSalesUsd = (game.companyGemSalesUsd || 0) + companyShare;
+      game.companyRegularGemSalesUsd = (game.companyRegularGemSalesUsd || 0) + companyShare;
+    }
   } else if (isEmployed) {
     personalGain = +(d.valueUsd * COMPANY_DIA_INCENTIVE).toFixed(2);
     companyShare = +(d.valueUsd * (1 - COMPANY_DIA_INCENTIVE)).toFixed(2);
