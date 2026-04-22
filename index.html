@@ -9965,14 +9965,18 @@ function showMineOccupiedModal() {
   const modal = document.getElementById('modal-mine-occupied');
   const content = document.getElementById('mine-occupied-content');
   if (!modal || !content) return;
-  // 自分の現在ランク（鉱山選択と同じルール）
-  const myRank = getCurrentRank();
+  // 自分の現在ランク（モード別：個人=採掘XPランク / ランキング=オフィスLv）
+  const isRankingMode = state?.gameMode === 'ranking';
+  const myLv = (typeof getMyEffectiveRankLv === 'function') ? getMyEffectiveRankLv() : 1;
+  const myRankLabel = isRankingMode
+    ? `🏢 オフィスLv.${myLv}`
+    : (() => { const r = getCurrentRank(); return `${r.icon} Lv.${r.lv} ${r.name}`; })();
   // 他の鉱山一覧（ランクで選択可 / ロックは別表示）
   const availableMines = state.mineStates.filter(m =>
     m.id !== state.chosenMine.id && m.remainingDjm > 0
   );
-  const unlockedMines = availableMines.filter(m => myRank.lv >= getMineRequiredRank(m));
-  const lockedMines   = availableMines.filter(m => myRank.lv <  getMineRequiredRank(m));
+  const unlockedMines = availableMines.filter(m => myLv >= getMineRequiredRank(m));
+  const lockedMines   = availableMines.filter(m => myLv <  getMineRequiredRank(m));
   let body = `
     <div class="mo-head">
       <div class="mo-icon">😱</div>
@@ -10001,10 +10005,13 @@ function showMineOccupiedModal() {
     body += `<div class="mo-section-label" style="margin-top:10px; color:#aaa;">🔒 ランク不足でまだ入れない鉱山</div><div class="mo-mine-list">`;
     lockedMines.forEach(m => {
       const req = getMineRequiredRank(m);
+      const unlockHint = isRankingMode
+        ? `オフィスをLv.${req} にアップグレード`
+        : `Lv.${req} から入れる`;
       body += `
-        <div class="mo-mine-item" style="opacity:0.55; cursor:not-allowed; background:#2a2a2a;" onclick="event.preventDefault(); customAlert('', {kind:'warn', title:'ランクが足りません', html:'🔒 この鉱山は <b>Lv.${req}</b> から入れる。<br>今の自分は <b>Lv.${myRank.lv} ${myRank.name}</b>。<br>経験値を積んでランクを上げよう！'});">
+        <div class="mo-mine-item" style="opacity:0.55; cursor:not-allowed; background:#2a2a2a;" onclick="event.preventDefault(); customAlert('', {kind:'warn', title:'ランクが足りません', html:'🔒 この鉱山は <b>${unlockHint}</b>。<br>現在 ${myRankLabel}。'});">
           <div class="mo-mine-name">🔒 ${m.name}</div>
-          <div class="mo-mine-remain">Lv.${req} から解放 / 現在Lv.${myRank.lv}</div>
+          <div class="mo-mine-remain">${isRankingMode ? `オフィスLv.${req} 必要` : `Lv.${req} から解放`} / 現在 ${myRankLabel}</div>
           <div class="mo-mine-arrow" style="color:#888;">✖</div>
         </div>`;
     });
@@ -10133,14 +10140,21 @@ function fastForwardDay() {
 function moveToMine(mineId) {
   const newMine = state.mineStates.find(m => m.id === mineId);
   if (!newMine || newMine.remainingDjm <= 0) return;
-  // 🔒 ランクチェック（UIをバイパスした呼び出しや、旧セーブのフィルタ漏れに対する安全弁）
-  const myRank = getCurrentRank();
+  // 🔒 ランクチェック（モード別：個人=採掘XP / ランキング=オフィスLv）
+  const isRankingMode = state?.gameMode === 'ranking';
+  const myLv = (typeof getMyEffectiveRankLv === 'function') ? getMyEffectiveRankLv() : 1;
   const req = getMineRequiredRank(newMine);
-  if (myRank.lv < req) {
+  if (myLv < req) {
+    const myRankLabel = isRankingMode
+      ? `🏢 オフィスLv.${myLv}`
+      : (() => { const r = getCurrentRank(); return `${r.icon} Lv.${r.lv} ${r.name}`; })();
+    const unlockHint = isRankingMode
+      ? `オフィスをLv.${req} にアップグレード`
+      : `Lv.${req} から入れる`;
     customAlert('', {
       kind: 'warn',
       title: 'ランクが足りません',
-      html: `🔒 <b>${newMine.name}</b> は <b>Lv.${req}</b> から入れる。<br>今の自分は <b>Lv.${myRank.lv} ${myRank.name}</b>。<br>経験値を積んでランクを上げよう！`
+      html: `🔒 <b>${newMine.name}</b> は <b>${unlockHint}</b>。<br>現在 ${myRankLabel}。`
     });
     return;
   }
