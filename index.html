@@ -4667,6 +4667,20 @@
       選んだ鉱山「<span id="shop-mine-name">-</span>」で使うつるはしを、USDTから交換したROND／DJMで購入！
     </div>
 
+    <!-- 🎯 入手フロー表示（クリックで詳細チュートリアル） -->
+    <div id="shop-flow-banner" style="background:linear-gradient(135deg,#1a1a2e,#5a3e7a); border:3px solid #ffd700; border-radius:6px; padding:8px 12px; margin-bottom:10px; color:#fff; box-shadow:3px 3px 0 #000; cursor:pointer;" onclick="showShopTutorial()">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div style="font-size:11px; font-weight:900; color:#ffd700; letter-spacing:1px;">🎯 つるはし入手フロー（タップで詳細）</div>
+        <div style="display:flex; gap:6px; align-items:center; font-size:11px; flex-wrap:wrap;">
+          <span id="shop-flow-step1" style="background:#3a7a4a; color:#fff; padding:3px 8px; border:2px solid #fff; border-radius:4px; font-weight:900;">① 🏦 USDT→DJM交換</span>
+          <span style="color:#ffd700; font-size:14px;">▶</span>
+          <span id="shop-flow-step2" style="background:rgba(255,255,255,0.2); color:#ccc; padding:3px 8px; border:2px solid #888; border-radius:4px; font-weight:900;">② 🛒 つるはし購入</span>
+          <span style="color:#ffd700; font-size:14px;">▶</span>
+          <span id="shop-flow-step3" style="background:rgba(255,255,255,0.2); color:#ccc; padding:3px 8px; border:2px solid #888; border-radius:4px; font-weight:900;">③ ⛏ 採掘開始</span>
+        </div>
+      </div>
+    </div>
+
     <div class="wallet-row">
       <div class="wallet-chip usdt"><div class="lbl">資 本 金</div><div class="amt">$ <span id="w-usdt">0</span> USDT</div></div>
       <div class="wallet-chip rond"><div class="lbl">ROND</div><div class="amt"><span id="w-rond">0</span></div></div>
@@ -7005,10 +7019,19 @@ function chooseMine(mineId) {
   updateBalances();
   showScreen('screen-shop');
   saveGame();
+  // 🎯 ショップフローバナー更新
+  try { updateShopFlowSteps(); } catch(_){}
+  // 🎓 初回入店なら自動でチュートリアル表示（個人モードのみ・ランキングは別チュートリアルで案内済）
+  try {
+    if (state.gameMode !== 'ranking' && !localStorage.getItem('dojima_shop_tutorial_seen')) {
+      setTimeout(() => showShopTutorial(), 600);
+    }
+  } catch(_){}
 }
 
-// ショップ画面のタブ切り替え
+// ショップ画面のタブ切り替え（フローバナーも更新）
 function switchShopTab(name) {
+  try { updateShopFlowSteps(); } catch(_){}
   const tabs = {
     exchange: { btn: 'tab-btn-ex',    content: 'tab-content-ex' },
     pickaxe:  { btn: 'tab-btn-pick',  content: 'tab-content-pick' },
@@ -7377,6 +7400,8 @@ function renderShop() {
     } else cartBadge.style.display = 'none';
   }
   updateBalances();
+  // 🎯 フローバナー更新
+  try { updateShopFlowSteps(); } catch(_){}
 }
 
 function renderExchanges() {
@@ -10669,6 +10694,75 @@ function restartFromBankruptcy() {
 // ============================================================
 // つるはし再購入
 // ============================================================
+// 🎯 ショップフローバナーのアクティブステップを更新
+function updateShopFlowSteps() {
+  const s1 = document.getElementById('shop-flow-step1');
+  const s2 = document.getElementById('shop-flow-step2');
+  const s3 = document.getElementById('shop-flow-step3');
+  if (!s1 || !s2 || !s3) return;
+  const hasCrypto = (state.rond > 100 || state.djm > 50);
+  const hasCart = state.cart && state.cart.length > 0;
+  // 全部リセット → アクティブ判定で塗り直し
+  const styleActive = 'background:#3a7a4a; color:#fff; padding:3px 8px; border:2px solid #fff; border-radius:4px; font-weight:900;';
+  const styleDone = 'background:#1f3a68; color:#fff; padding:3px 8px; border:2px solid #7ae890; border-radius:4px; font-weight:900;';
+  const styleInactive = 'background:rgba(255,255,255,0.2); color:#ccc; padding:3px 8px; border:2px solid #888; border-radius:4px; font-weight:900;';
+  if (hasCart) {
+    s1.style.cssText = styleDone; s1.innerHTML = '✅ 交換済';
+    s2.style.cssText = styleDone; s2.innerHTML = '✅ 購入済';
+    s3.style.cssText = styleActive; s3.innerHTML = '③ ⛏ 採掘開始 ←今ここ';
+  } else if (hasCrypto) {
+    s1.style.cssText = styleDone; s1.innerHTML = '✅ 交換済';
+    s2.style.cssText = styleActive; s2.innerHTML = '② 🛒 つるはし購入 ←今ここ';
+    s3.style.cssText = styleInactive; s3.innerHTML = '③ ⛏ 採掘開始';
+  } else {
+    s1.style.cssText = styleActive; s1.innerHTML = '① 🏦 USDT→DJM交換 ←今ここ';
+    s2.style.cssText = styleInactive; s2.innerHTML = '② 🛒 つるはし購入';
+    s3.style.cssText = styleInactive; s3.innerHTML = '③ ⛏ 採掘開始';
+  }
+}
+
+// 🎓 ショップ詳細チュートリアル（初回入店時 or バナークリックで起動）
+async function showShopTutorial() {
+  if (typeof customAlert !== 'function') return;
+  const html = `
+    <div style="text-align:left; font-size:13px; line-height:1.7;">
+      <div style="background:#5a3e7a; color:#fff; padding:6px 10px; border-radius:4px; font-weight:900; margin-bottom:8px;">
+        📚 つるはしを手に入れて採掘するまでの3ステップ
+      </div>
+      <div style="background:#fff8e6; border:2px solid #1a1a1a; padding:10px; margin-bottom:8px;">
+        <div style="font-weight:900; color:#3a7a4a; margin-bottom:4px;">① 🏦 取引所でウォレットに接続＆USDT交換</div>
+        <div>1. <b>「🏦 取引所」</b>タブを開く</div>
+        <div>2. 3社の取引所から選んで <b>「ウォレット接続」</b> ボタン押す（Binanceがおすすめ・手数料安い）</div>
+        <div>3. <b>USDT を DJM</b> に交換（DJMの方が割引で買えてお得！）</div>
+        <div style="font-size:11px; color:#b93a3a; margin-top:4px;">💡 取引所間で価格差あり！高い所で売って安い所で買えば<b>アービトラージ</b>で稼げる</div>
+      </div>
+      <div style="background:#fff8e6; border:2px solid #1a1a1a; padding:10px; margin-bottom:8px;">
+        <div style="font-weight:900; color:#3a7a4a; margin-bottom:4px;">② 🛒 つるはしショップで購入</div>
+        <div>1. <b>「🛒 つるはし」</b>タブを開く</div>
+        <div>2. 種類を選んで <b>「DJMで買う🔥」</b> or <b>「RONDで買う」</b> をクリック</div>
+        <div>3. カートに追加される（複数本まとめ買いOK）</div>
+        <div style="font-size:11px; color:#b8860b; margin-top:4px;">💡 激安(200DJM)→ベーシック→プレミアム→黄金 の順に強くなる<br>💡 DJM支払いの方が割引で<b>10〜20%お得</b>！</div>
+      </div>
+      <div style="background:#fff8e6; border:2px solid #1a1a1a; padding:10px;">
+        <div style="font-weight:900; color:#3a7a4a; margin-bottom:4px;">③ ⛏ 採掘開始ボタン</div>
+        <div>1. ショップ画面下部の <b>「⛏ 採掘開始 ▶」</b> ボタンをクリック</div>
+        <div>2. 採掘画面に入って岩をタップ → DJM・宝石ゲット！</div>
+        <div style="font-size:11px; color:#5a3e7a; margin-top:4px;">💡 ライバル（マキシー、他プレイヤー）より先にお宝を取れ！</div>
+      </div>
+      <div style="margin-top:10px; padding:8px; background:#1f3a68; color:#fff; text-align:center; font-size:12px; border-radius:4px;">
+        🎯 ショップ画面上のフロー表示で、いま自分が<b>どのステップにいる</b>か確認できる！
+      </div>
+    </div>`;
+  await customAlert(html, {
+    title: '📚 ショップの使い方ガイド',
+    kind: 'info',
+    okLabel: 'なるほど！',
+    html: true,
+  });
+  // チュートリアル見たフラグをセット（次回からは自動表示しない）
+  try { localStorage.setItem('dojima_shop_tutorial_seen', '1'); } catch(_){}
+}
+
 function openBuyPickaxe() {
   closeAllModals();
   // 所持本数を表示（既に持ってるつるはしの内訳）
