@@ -2084,9 +2084,17 @@
     color: #ffd700;
     text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
     pointer-events: none; z-index: 7;
-    line-height: 1;
+    line-height: 1.05;
+    cursor: help;
   }
-  .mined-label.gem { color: #ff8aff; font-size: 10px; }
+  .mined-label.gem {
+    color: #ff8aff; font-size: 9px;
+    background: rgba(0,0,0,0.55);
+    padding: 1px 2px;
+    border-radius: 2px;
+    line-height: 1.1;
+  }
+  .mined-label.gem > div { line-height: 1.05; }
 
   /* ============ 採掘成功 ど派手 演出 ============ */
   /* マスから飛び出る +XXX DJM の巨大ラベル */
@@ -6516,7 +6524,7 @@ function createInitialState() {
     survivingPickaxes: [], // 前日の耐久度残ったつるはしを持ち越す
     missionsCompleted: [], // 達成済みミッションID
     missionsSeen: [],      // 初回案内表示済みミッション
-    bestRecords: { totalWealth: 0, day: 0, playerName: '' }, // ランキング用最高記録
+    bestRecords: { totalWealth: 0, day: 0, playerName: '' }, // 自己ベスト記録（個人モード=自己内、ランキングモード=サーバー送信）
     markets: initMarkets(),
     marketLog: [],
     // DJMステーキング
@@ -8835,10 +8843,11 @@ function finishDrill(idx) {
     svg.setAttribute('viewBox','0 0 80 80');
     svg.innerHTML = `<use href="#diamond-raw"/>`;
     el.appendChild(svg);
-    // ラベル
+    // ラベル — 採掘DJM＋鑑定でさらに価値が出ることを明示
     const lbl = document.createElement('div');
     lbl.className = 'mined-label gem';
-    lbl.textContent = `💎${loot.caratRaw}ct +${coinsEarned}`;
+    lbl.innerHTML = `<div style="font-weight:900;">💎${loot.caratRaw}ct</div><div><span style="color:#ffd700;">+${coinsEarned}</span><span style="font-size:7px; opacity:0.8;"> DJM</span></div><div style="font-size:7px; color:#ffd700; font-weight:900;">＋鑑定で💰💰💰</div>`;
+    lbl.title = `採掘で +${coinsEarned} DJM 獲得！ さらに鑑定所で査定→売却すると数千〜数万USDTになる超希少な原石！`;
     el.appendChild(lbl);
     // ★ダイヤ専用の全画面派手演出
     showDiamondDiscovery(el, loot, coinsEarned);
@@ -8862,16 +8871,24 @@ function finishDrill(idx) {
     if (loot.flash) showFlash();
     if (loot.concentration) showConcentration();
     addLog(`<span class="us">🎉 ウチが${loot.name}発掘！(+${coinsEarned}DJM)</span>`);
-    // ラベル
-    const lbl = document.createElement('div');
-    lbl.className = 'mined-label gem';
-    lbl.textContent = `💎+${coinsEarned}`;
-    el.appendChild(lbl);
     // ★個人コレクションにも保存（鑑定所で売却可能）
     if (!state.personal.rawDiamonds) state.personal.rawDiamonds = [];
     // 宝石のUSDT価値 = 採掘DJM価値の2〜4倍（眉毛ダイヤなど希少なものは高値）
     const multiplier = loot.mega ? 4.2 : loot.tier === 'epic' ? 3.0 : loot.tier === 'rare' ? 2.2 : 1.6;
     const gemUsd = Math.floor(coinsEarned * multiplier * (0.01 * (state.markets?.binance?.djmPrice ? 1/state.markets.binance.djmPrice/100 : 1)) * 4) + 10;
+    // ラベル — 採掘DJM＋鑑定所で売れる概算USDTを併記
+    // 🎨 「≈$XXX」テキスト色を宝石種類別に統一（水色はダイヤ専用！他はそれぞれの色）
+    const valColor =
+      loot.sym === 'gem-dia'    ? '#e0f5ff' :   // 💎 ダイヤモンド → 水色（神聖）
+      loot.sym === 'gem-aqua'   ? '#5fd47a' :   // 🟢 エメラルド → 緑
+      loot.sym === 'gem-spinel' ? '#ffb0c8' :   // 💗 レッドスピネル → 桃
+      loot.sym === 'gem-gold'   ? '#ffd700' :   // 🟡 眉毛ダイヤ・金宝石 → 金
+                                  '#ffe28a';    // フォールバック（薄い黄）
+    const lbl = document.createElement('div');
+    lbl.className = 'mined-label gem';
+    lbl.innerHTML = `<div><span style="color:#ffd700;">+${coinsEarned}</span><span style="font-size:7px; opacity:0.8;"> DJM</span></div><div style="font-size:8px; color:${valColor}; font-weight:900;">≈$${gemUsd}</div>`;
+    lbl.title = `採掘で +${coinsEarned} DJM 即時獲得！ さらに鑑定所で売却すると概算 $${gemUsd} USDT （個人在庫に保存中）`;
+    el.appendChild(lbl);
     state.personal.rawDiamonds.push({
       type: 'gem',
       name: loot.name,
@@ -8900,10 +8917,11 @@ function finishDrill(idx) {
     popSFX(el, loot.sfx, loot.cls);
     game.shoushekiCount += 1;
     setMsg(`輝石（${loot.size === 'l' ? '大' : loot.size === 'm' ? '中' : '小'}）+${coinsEarned} DJM`);
-    // ラベル（コイン額）
+    // ラベル（コイン額）— 単位を明示
     const lbl = document.createElement('div');
     lbl.className = 'mined-label';
-    lbl.textContent = `+${coinsEarned}`;
+    lbl.innerHTML = `<span style="color:#ffd700;">+${coinsEarned}</span> <span style="font-size:8px; opacity:0.85;">DJM</span>`;
+    lbl.title = `この場で会社/採掘者が獲得するDJMコイン量です（+${coinsEarned} DJM）`;
     el.appendChild(lbl);
     // ★派手な獲得演出（通常）
     showDjmGainCelebration(el, coinsEarned, 'normal');
@@ -9589,6 +9607,8 @@ function sellAllSellableItems() {
   if (game) updateAllHUD();
   // 結果画面が開いてれば経費レポート再描画
   refreshResultExpensesIfActive();
+  // 💰 結果画面が開いてれば個人ウォレット表示を更新＋自己ベスト判定
+  try { refreshResultWalletAndBestIfActive(); } catch(_){}
 }
 
 function appraiseAndShow(idx) {
@@ -9706,6 +9726,8 @@ function sellDiamond(idx) {
   if (game) updateAllHUD();
   // 結果画面が開いてれば経費レポート再描画
   refreshResultExpensesIfActive();
+  // 💰 結果画面が開いてれば個人ウォレット表示を更新＋自己ベスト判定
+  try { refreshResultWalletAndBestIfActive(); } catch(_){}
 }
 
 // 採取済み宝石（gem-collected）を売却
@@ -9778,6 +9800,8 @@ function sellGemFromCollection(idx) {
   if (game) updateAllHUD();
   // 結果画面が開いてれば経費レポート再描画
   refreshResultExpensesIfActive();
+  // 💰 結果画面が開いてれば個人ウォレット表示を更新＋自己ベスト判定
+  try { refreshResultWalletAndBestIfActive(); } catch(_){}
 }
 
 // 採取済み宝石を資産保有
@@ -11183,6 +11207,56 @@ function refreshResultExpensesIfActive() {
   try { renderResultCompanyExpenses(); } catch(_){}
 }
 
+// 💰 結果画面表示中に売却したら個人ウォレット表示も即時更新＋自己ベスト判定
+function refreshResultWalletAndBestIfActive() {
+  const screen = document.getElementById('screen-result');
+  if (!screen || !screen.classList.contains('active')) return;
+  // 個人ウォレット表示を再計算
+  try {
+    const persUsdt = state.personal.usdt || 0;
+    const persDebt = state.personal.debt || 0;
+    const netPers = persUsdt - persDebt;
+    const usdtDispEl = document.getElementById('r-personal-usdt-display');
+    if (usdtDispEl) {
+      if (netPers < 0) {
+        usdtDispEl.innerHTML = `<span style="color:#ff7a7a;">$ -${Math.abs(netPers).toFixed(2)} USDT</span>`;
+      } else {
+        // 売却で増えた瞬間に派手にハイライト
+        usdtDispEl.innerHTML = `<span style="color:#3a7a4a; text-shadow: 0 0 6px #7ae890;">$ ${persUsdt.toFixed(2)} USDT</span> <span style="font-size:10px; color:#3a7a4a; font-weight:900;">↑更新</span>`;
+        // 1.5秒後に通常表示に戻す
+        setTimeout(() => {
+          if (usdtDispEl) usdtDispEl.textContent = `$ ${(state.personal.usdt || 0).toFixed(2)} USDT`;
+        }, 1800);
+      }
+    }
+    // 借金行
+    const debtRowEl = document.getElementById('r-personal-debt');
+    if (debtRowEl) {
+      if (persDebt > 0) {
+        debtRowEl.style.display = '';
+        const a1 = document.getElementById('r-personal-debt-amt');
+        if (a1) a1.textContent = `-$${persDebt.toFixed(2)}`;
+        const a2 = document.getElementById('r-personal-net');
+        if (a2) a2.textContent = (netPers < 0 ? '-' : '') + '$' + Math.abs(netPers).toFixed(2);
+      } else {
+        debtRowEl.style.display = 'none';
+      }
+    }
+    // 結果画面の宝石リストも再描画（売却済みマーク付与＋累積在庫から消す）
+    try { renderResultGems(); } catch(_){}
+    // 経費レポートも更新
+    try { renderResultCompanyExpenses(); } catch(_){}
+  } catch(_){}
+  // 🏆 売却で総資産が増えた可能性 → 自己ベスト判定（NEW RECORD演出）
+  try { updateBestRecord(); } catch(_){}
+  // 🌐 ランキングモードならサーバー送信も即時実行
+  try {
+    if (state.gameMode === 'ranking') {
+      submitRankingToServer();
+    }
+  } catch(_){}
+}
+
 // 🏢 ランキングモードの結果画面：会社経費レポート描画
 function renderResultCompanyExpenses() {
   const panel = document.getElementById('result-company-expenses');
@@ -11339,7 +11413,7 @@ function nextDay() {
   checkPersonalBankruptcy();
   // ミッション達成チェック
   checkMissions();
-  // ベスト記録更新（ランキングモード用）
+  // ベスト記録更新（両モード共通：個人モード=自己ベスト、ランキングモード=世界ランキング）
   updateBestRecord();
   // 🌐 サーバーに送信（ランキング共有）
   if (state.gameMode === 'ranking') {
@@ -16554,13 +16628,20 @@ function showNewRecordCelebration(newWealth, oldWealth) {
   const overlay = document.createElement('div');
   overlay.className = 'new-record-overlay';
   const diff = newWealth - oldWealth;
+  // 🎯 モード別メッセージ（個人モードは自己ベスト、ランキングモードは世界ランキング）
+  const isRanking = state && state.gameMode === 'ranking';
+  const titleTxt = isRanking ? '🎊 NEW RECORD！ 🎊' : '🌟 自己ベスト更新！ 🌟';
+  const subTxt = isRanking ? '世界ランキングを更新！' : 'あなた自身の最高記録を更新！';
+  const hintTxt = isRanking
+    ? '🌐 世界ランキングに反映されました！'
+    : '💪 自己ベスト記録を塗り替えた！次はもっと上を目指そう！';
   overlay.innerHTML = `
     <div class="nr-inner">
-      <div class="nr-title">🎊 NEW RECORD！ 🎊</div>
-      <div class="nr-sub">自己最高記録を更新！</div>
+      <div class="nr-title">${titleTxt}</div>
+      <div class="nr-sub">${subTxt}</div>
       <div class="nr-wealth">$${newWealth.toLocaleString()}</div>
       <div class="nr-diff">前回 $${oldWealth.toLocaleString()} → <b style="color:#7ae890;">+$${diff.toLocaleString()}</b></div>
-      <div class="nr-hint">ランキングに反映されました！</div>
+      <div class="nr-hint">${hintTxt}</div>
       <button class="nr-close-btn" onclick="this.closest('.new-record-overlay').remove();">▶ 続ける</button>
     </div>
   `;
