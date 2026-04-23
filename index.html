@@ -10753,11 +10753,11 @@ async function showShopTutorial() {
         🎯 ショップ画面上のフロー表示で、いま自分が<b>どのステップにいる</b>か確認できる！
       </div>
     </div>`;
-  await customAlert(html, {
+  await customAlert('', {
     title: '📚 ショップの使い方ガイド',
     kind: 'info',
     okLabel: 'なるほど！',
-    html: true,
+    html: html,
   });
   // チュートリアル見たフラグをセット（次回からは自動表示しない）
   try { localStorage.setItem('dojima_shop_tutorial_seen', '1'); } catch(_){}
