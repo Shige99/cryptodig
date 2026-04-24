@@ -5056,6 +5056,7 @@
           <div class="name">👤 <span id="r-wallet-label">どうじまくん</span> 個人ウォレット</div>
           <div class="amt"><span id="r-personal-usdt-display">$ 0 USDT</span></div>
           <div id="r-personal-debt" style="display:none; color:#ff7a7a; font-size:11px; font-weight:900; margin-top:2px;">🏦 借金 <span id="r-personal-debt-amt">$0</span>（純資産 <span id="r-personal-net">$0</span>）</div>
+          <div id="r-appraiser-income-row" style="display:none; color:#ffd700; font-size:11px; font-weight:900; margin-top:3px; padding:3px 6px; background:rgba(184,134,11,0.18); border-left:3px solid #ffd700; border-radius:2px;">💎 本日の鑑定所売却収入 <span style="color:#7ae890;">+$<span id="r-appraiser-income-amt">0</span></span> USDT <span id="r-appraiser-income-detail" style="font-size:10px; opacity:0.85; font-weight:700;"></span></div>
           <div class="sub" id="r-income-note">＋今日のインセンティブ報酬 <span id="r-incentive">0</span> USDT（採掘売上の20%）</div>
           <div class="assets-display" id="r-assets"></div>
         </div>
@@ -5271,24 +5272,25 @@ const CHEAPEST_PICK_PRICE = 800;
 //   personal: 採掘ランクLv（getCurrentRank().lv）
 //   いずれも未指定なら「誰でも」。複数条件があれば OR（どちらか満たせばOK）
 const PICKAXES = [
-  { id: 'cheap',   name: '激安つるはし',     desc: 'ホームセンター製。耐久度8・同時1マス・DJMバッチ【小】・遅い(4秒/マス)',
-    uses: 8,  drillSec: 4.0, slots: 1, priceRond: 500,   priceDjm: 200,    sym: 'pickaxe-cheap',   bonus: 1.0, tier: '小',
+  // 🚀 安い = 早い・薄利・低耐久（速攻型）／ 🐢 高い = 遅い・厚利・高耐久（大物型）
+  { id: 'cheap',   name: '激安つるはし',     desc: '🚀速攻型・耐久5・同時1マス・DJMバッチ【小】・爆速(1.0秒/マス)・薄利',
+    uses: 5,  drillSec: 1.0, slots: 1, priceRond: 500,   priceDjm: 200,    sym: 'pickaxe-cheap',   bonus: 0.6, tier: '小',
     requireRankLv: 1, requireOfficeLv: 1, requireStaffRank: null },
-  { id: 'mid',     name: 'ベーシック',       desc: '標準装備。耐久度18・同時1マス・DJMバッチ【中】・標準(3秒/マス)',
-    uses: 18, drillSec: 3.0, slots: 1, priceRond: 1500,  priceDjm: 600,    sym: 'pickaxe-mid',     bonus: 1.6, tier: '中',
+  { id: 'mid',     name: 'ベーシック',       desc: '⚖バランス型・耐久15・同時1マス・DJMバッチ【中】・速い(1.8秒/マス)',
+    uses: 15, drillSec: 1.8, slots: 1, priceRond: 1500,  priceDjm: 600,    sym: 'pickaxe-mid',     bonus: 1.2, tier: '中',
     requireRankLv: 1, requireOfficeLv: 1, requireStaffRank: null },
-  { id: 'premium', name: 'プレミアム',       desc: '二刀流の刃先。耐久度30・同時2マス・DJMバッチ【大】・速い(2.2秒/マス)',
-    uses: 30, drillSec: 2.2, slots: 2, priceRond: 5000,  priceDjm: 2000,   sym: 'pickaxe-premium', bonus: 2.6, tier: '大',
+  { id: 'premium', name: 'プレミアム',       desc: '💼厚利型・耐久30・同時2マス・DJMバッチ【大】・標準(2.5秒/マス)',
+    uses: 30, drillSec: 2.5, slots: 2, priceRond: 5000,  priceDjm: 2000,   sym: 'pickaxe-premium', bonus: 2.4, tier: '大',
     requireRankLv: 2, requireOfficeLv: 2, requireStaffRank: 'C' },
-  { id: 'gold',    name: '黄金のつるはし',   desc: '伝説級。耐久度50・同時3マス・DJMバッチ【特大】・爆速(1.5秒/マス)',
-    uses: 50, drillSec: 1.5, slots: 3, priceRond: 18000, priceDjm: 7200,   sym: 'pickaxe-gold',    bonus: 4.2, tier: '特大',
+  { id: 'gold',    name: '黄金のつるはし',   desc: '🐢重厚型・耐久60・同時3マス・DJMバッチ【特大】・遅い(3.5秒/マス)',
+    uses: 60, drillSec: 3.5, slots: 3, priceRond: 18000, priceDjm: 7200,   sym: 'pickaxe-gold',    bonus: 4.5, tier: '特大',
     requireRankLv: 3, requireOfficeLv: 4, requireStaffRank: 'S' },
-  { id: 'diamond', name: '💎ダイヤつるはし', desc: 'USDT直販！耐久度60・同時3マス・速度1.3秒・縛りなし（オフィスLv.2以上）',
-    uses: 60, drillSec: 1.3, slots: 3, priceUsdt: 3000,  priceDjm: 500000, sym: 'pickaxe-diamond', bonus: 4.6, tier: '超大',
+  { id: 'diamond', name: '💎ダイヤつるはし', desc: 'USDT直販！高級厚利・耐久80・同時3マス・3.0秒/マス・縛りなし（オフィスLv.2以上）',
+    uses: 80, drillSec: 3.0, slots: 3, priceUsdt: 3000,  priceDjm: 500000, sym: 'pickaxe-diamond', bonus: 5.5, tier: '超大',
     requireRankLv: 1, requireOfficeLv: 2, requireStaffRank: null,
     luxuryBypass: true, badge: '💎LUXURY' },
-  { id: 'mythic',  name: '👑神話のつるはし', desc: '伝説の最高峰！耐久度100・同時4マス・速度1.0秒・1日1本限定（オフィスLv.4以上）',
-    uses: 100, drillSec: 1.0, slots: 4, priceUsdt: 30000, priceDjm: 4000000, sym: 'pickaxe-mythic', bonus: 6.0, tier: '神話',
+  { id: 'mythic',  name: '👑神話のつるはし', desc: '伝説の最高峰！耐久120・同時4マス・4.0秒/マス・1日1本限定（オフィスLv.4以上）',
+    uses: 120, drillSec: 4.0, slots: 4, priceUsdt: 30000, priceDjm: 4000000, sym: 'pickaxe-mythic', bonus: 8.0, tier: '神話',
     requireRankLv: 1, requireOfficeLv: 4, requireStaffRank: null,
     luxuryBypass: true, badge: '👑MYTHIC', dailyLimit: 1 },
 ];
@@ -7919,6 +7921,9 @@ function startMining() {
     teams: initTeams(state.chosenMine),
     totalPlayers: state.chosenMine.basePlayers + Math.floor(Math.random() * 10),
     ended: false,
+    appraiserPersonalSales: 0, // 💎 本日の鑑定所売却で個人が得たUSDT累積
+    appraiserCompanySales: 0,  // 💎 本日の鑑定所売却で会社が得たUSDT累積
+    appraiserSaleCount: 0,     // 💎 本日の売却件数
   };
 
   closeAllModals();
@@ -9580,6 +9585,11 @@ function sellAllSellableItems() {
   state.personal.rawDiamonds = remaining;
   state.personal.usdt += totalPersonal;
   state.usdt += totalCompany;
+  // 💎 鑑定所売却の「本日の個人収入」をトラッキング（結果画面で明示表示用）
+  if (!game) game = {};
+  game.appraiserPersonalSales = (game.appraiserPersonalSales || 0) + totalPersonal;
+  game.appraiserCompanySales = (game.appraiserCompanySales || 0) + totalCompany;
+  game.appraiserSaleCount = (game.appraiserSaleCount || 0) + count;
   const totalSale = totalPersonal + totalCompany;
   snapshotWealth('mining', totalSale, `💎 ${count}個 一括売却 +$${totalSale.toFixed(2)} ${isRanking ? '（個人$' + totalPersonal.toFixed(0) + '/会社$' + totalCompany.toFixed(0) + '）' : ''}`);
   // 🎵 一括売却SE：レジの連打＋大当たり
@@ -9695,6 +9705,11 @@ function sellDiamond(idx) {
     game.companyDiamondSalesUsd = (game.companyDiamondSalesUsd || 0) + companyShare;
     game.personalDiamondSalesUsd = (game.personalDiamondSalesUsd || 0) + personalGain;
   }
+  // 💎 鑑定所売却の「本日の個人収入」をトラッキング（結果画面で明示表示用）
+  if (!game) game = {};
+  game.appraiserPersonalSales = (game.appraiserPersonalSales || 0) + personalGain;
+  game.appraiserCompanySales = (game.appraiserCompanySales || 0) + companyShare;
+  game.appraiserSaleCount = (game.appraiserSaleCount || 0) + 1;
   // 🎵 売却SE：レジの「チン♪」風 + 金額に応じたファンファーレ
   try {
     SE.play('purchase');
@@ -9773,6 +9788,11 @@ function sellGemFromCollection(idx) {
     personalGain = +d.valueUsd.toFixed(2);
     state.personal.usdt += personalGain;
   }
+  // 💎 鑑定所売却の「本日の個人収入」をトラッキング（結果画面で明示表示用）
+  if (!game) game = {};
+  game.appraiserPersonalSales = (game.appraiserPersonalSales || 0) + personalGain;
+  game.appraiserCompanySales = (game.appraiserCompanySales || 0) + companyShare;
+  game.appraiserSaleCount = (game.appraiserSaleCount || 0) + 1;
   // 🎵 宝石売却SE：レジ音 + 金額に応じたグラデSE
   try {
     SE.play('purchase');
@@ -11112,6 +11132,8 @@ function goResult() {
       debtRowEl.style.display = 'none';
     }
   }
+  // 💎 鑑定所売却収入の表示（本日売却分があれば）
+  try { _updateAppraiserIncomeRow(); } catch(_){}
   // 📝 モード別に注釈をラベル付け替え
   const incomeNote = document.getElementById('r-income-note');
   if (incomeNote) {
@@ -11207,6 +11229,32 @@ function refreshResultExpensesIfActive() {
   try { renderResultCompanyExpenses(); } catch(_){}
 }
 
+// 💎 鑑定所売却収入の表示更新（共通）
+function _updateAppraiserIncomeRow() {
+  const row = document.getElementById('r-appraiser-income-row');
+  const amt = document.getElementById('r-appraiser-income-amt');
+  const detail = document.getElementById('r-appraiser-income-detail');
+  if (!row || !amt) return;
+  const personal = (game && game.appraiserPersonalSales) || 0;
+  const company  = (game && game.appraiserCompanySales) || 0;
+  const count    = (game && game.appraiserSaleCount) || 0;
+  if (personal > 0 || company > 0) {
+    row.style.display = '';
+    amt.textContent = personal.toFixed(2);
+    if (detail) {
+      const isRanking = state.gameMode === 'ranking';
+      const isEmployed = !state.personal.hasCompany;
+      if (company > 0 && (isRanking || isEmployed)) {
+        detail.textContent = `（${count}件売却・うち会社へ +$${company.toFixed(2)}）`;
+      } else {
+        detail.textContent = `（${count}件売却）`;
+      }
+    }
+  } else {
+    row.style.display = 'none';
+  }
+}
+
 // 💰 結果画面表示中に売却したら個人ウォレット表示も即時更新＋自己ベスト判定
 function refreshResultWalletAndBestIfActive() {
   const screen = document.getElementById('screen-result');
@@ -11242,6 +11290,8 @@ function refreshResultWalletAndBestIfActive() {
         debtRowEl.style.display = 'none';
       }
     }
+    // 💎 鑑定所売却収入の表示
+    _updateAppraiserIncomeRow();
     // 結果画面の宝石リストも再描画（売却済みマーク付与＋累積在庫から消す）
     try { renderResultGems(); } catch(_){}
     // 経費レポートも更新
@@ -14082,9 +14132,31 @@ function updateMiniTicker() {
     });
     mkEl.innerHTML = parts.join('&nbsp;&nbsp;｜&nbsp;&nbsp;');
   }
-  // 個人ウォレット
+  // 個人ウォレット — 負債があれば純資産（usdt - debt）を表示。マイナスなら赤
   const pEl = document.getElementById('hud-personal-usdt');
-  if (pEl && state.personal) pEl.textContent = state.personal.usdt.toFixed(2);
+  if (pEl && state.personal) {
+    const _usdt = state.personal.usdt || 0;
+    const _debt = state.personal.debt || 0;
+    const _net = _usdt - _debt;
+    // 親 span の color スタイル（黄or赤）を上書き
+    const parentColorEl = pEl.parentElement;
+    if (_debt > 0 && _net < 0) {
+      // 債務超過 → マイナス値を赤で表示
+      pEl.textContent = '-' + Math.abs(_net).toFixed(2);
+      if (parentColorEl) parentColorEl.style.color = '#ff7a7a';
+      pEl.title = `個人USDT $${_usdt.toFixed(2)} − 負債 $${_debt.toFixed(2)} = 純資産 -$${Math.abs(_net).toFixed(2)}`;
+    } else if (_debt > 0) {
+      // 負債あるが純資産プラス → 黄色（やや警告色）
+      pEl.textContent = _usdt.toFixed(2);
+      if (parentColorEl) parentColorEl.style.color = '#ffd700';
+      pEl.title = `個人USDT $${_usdt.toFixed(2)} − 負債 $${_debt.toFixed(2)} = 純資産 $${_net.toFixed(2)}`;
+    } else {
+      // 通常 → 金色
+      pEl.textContent = _usdt.toFixed(2);
+      if (parentColorEl) parentColorEl.style.color = '#ffd700';
+      pEl.title = `個人USDT $${_usdt.toFixed(2)}`;
+    }
+  }
   const cb = document.getElementById('hud-company-badge');
   if (cb) cb.style.display = state.personal && state.personal.hasCompany ? 'inline' : 'none';
 }
