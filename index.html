@@ -8667,6 +8667,8 @@ function mineRock(idx, el) {
   refreshPickBusyFlags();
 
   renderInventory();
+  // 🛠 HUDの耐久度ゲージも即時更新（現在使用中つるはしに連動）
+  try { updateHudDuraBar(); } catch(_){}
   updateAllHUD();
 }
 
@@ -10785,7 +10787,7 @@ async function showShopTutorial() {
         <div>1. <b>「🛒 つるはし」</b>タブを開く</div>
         <div>2. 種類を選んで <b>「DJMで買う🔥」</b> or <b>「RONDで買う」</b> をクリック</div>
         <div>3. カートに追加される（複数本まとめ買いOK）</div>
-        <div style="font-size:11px; color:#b8860b; margin-top:4px;">💡 激安(200DJM)→ベーシック→プレミアム→黄金 の順に強くなる<br>💡 DJM支払いの方が割引で<b>10〜20%お得</b>！</div>
+        <div style="font-size:11px; color:#b8860b; margin-top:4px;">💡 <b style="color:#7ae890;">🚀安い=早い・薄利・低耐久</b> ⇔ <b style="color:#ff8a8a;">🐢高い=遅い・厚利・高耐久</b><br>💡 序盤は激安たくさんで「広く浅く」、中盤以降は黄金で「狭く深く」が王道<br>💡 DJM支払いの方が割引で<b>10〜20%お得</b>！</div>
       </div>
       <div style="background:#fff8e6; border:2px solid #1a1a1a; padding:10px;">
         <div style="font-weight:900; color:#3a7a4a; margin-bottom:4px;">③ ⛏ 採掘開始ボタン</div>
@@ -11934,19 +11936,21 @@ function resolveLifeEvent(eventId, action) {
 // ============================================================
 // UI update helpers
 // ============================================================
-// HUDの耐久度ゲージを更新（次に使うつるはし or 最も耐久少ないpick）
+// HUDの耐久度ゲージを更新（現在使用中のpick優先 → 直近使用 → 手動ピン → 最大耐久）
 function updateHudDuraBar() {
   const nameEl = document.getElementById('hud-dura-name');
   const fill   = document.getElementById('hud-dura-bar-fill');
   const text   = document.getElementById('hud-dura-text');
+  const iconEl = document.getElementById('pick-icon');
   if (!nameEl || !fill || !text) return;
   if (!game || !game.pickaxes || game.pickaxes.length === 0) {
     nameEl.textContent = '—'; fill.style.width = '0%'; text.textContent = '耐久度 -/-';
     fill.classList.remove('low');
+    if (iconEl) iconEl.innerHTML = `<use href="#pickaxe-mid"/>`;
     return;
   }
-  // 表示用：手動ピン > 耐久少ない現役pick（busy含む） > 最初の pick
-  const alive = game.pickaxes.filter(p => !p.broken);
+  // 現役（壊れてない＆耐久残ってる）pickのみ対象
+  const alive = game.pickaxes.filter(p => !p.broken && p.usesLeft > 0);
   if (alive.length === 0) {
     nameEl.innerHTML = '<span style="color:#ff6060;">💥折損</span>';
     fill.style.width = '0%'; text.textContent = '0/0';
@@ -11954,11 +11958,28 @@ function updateHudDuraBar() {
     return;
   }
   let pick = null;
-  if (game.preferredPickId) {
+  // ① 現在 drilling 中のpickがあれば、最も最近開始されたもの（＝今まさに使ってる）
+  const drillingPickIds = new Set(Object.values(game.drilling || {}).map(d => d.pickId));
+  const drillingPicks = alive.filter(p => drillingPickIds.has(p.instanceId));
+  if (drillingPicks.length > 0) {
+    drillingPicks.sort((a,b) => (b.lastUsedAt||0) - (a.lastUsedAt||0));
+    pick = drillingPicks[0];
+  }
+  // ② 手動ピン（プレイヤーが優先指定したつるはし）
+  if (!pick && game.preferredPickId) {
     pick = alive.find(p => p.instanceId === game.preferredPickId);
   }
+  // ③ 直近使ったpick（lastUsedAt が一番新しい）
   if (!pick) {
-    const sorted = [...alive].sort((a,b) => a.usesLeft - b.usesLeft);
+    const recentlyUsed = alive.filter(p => p.lastUsedAt);
+    if (recentlyUsed.length > 0) {
+      recentlyUsed.sort((a,b) => (b.lastUsedAt||0) - (a.lastUsedAt||0));
+      pick = recentlyUsed[0];
+    }
+  }
+  // ④ まだ使ってない場合：耐久度が一番多いpick（次に使う候補）
+  if (!pick) {
+    const sorted = [...alive].sort((a,b) => b.usesLeft - a.usesLeft);
     pick = sorted[0];
   }
   const ratio = pick.usesLeft / pick.usesMax;
@@ -11968,6 +11989,10 @@ function updateHudDuraBar() {
   text.innerHTML = `<b>${pick.usesLeft}</b><span style="opacity:0.7;">/${pick.usesMax}</span>`;
   if (ratio <= 0.3) fill.classList.add('low');
   else fill.classList.remove('low');
+  // 🛠 アイコンも現在使用中のpickに連動（激安→ベーシック→…と切り替わる）
+  if (iconEl && pick.sym) {
+    iconEl.innerHTML = `<use href="#${pick.sym}"/>`;
+  }
 }
 
 function updateAllHUD() {
@@ -14572,13 +14597,13 @@ const TUTORIAL_STEPS_PERSONAL = [
   },
   {
     icon: '🛒',
-    title: 'STEP 5：つるはし購入（全6種・縛りあり）',
-    text: '鉱山を選んだらショップ画面へ。<br><strong>ROND・DJM・USDT でつるはしを購入</strong><br><br>📦 <strong>通常モデル（ランクで解放）</strong>：<br>・激安(耐久8)…初心者用<br>・ベーシック(耐久18)…標準<br>・プレミアム(耐久30/同時2マス)…<strong style="color:#b8860b;">Lv.2 から</strong><br>・黄金(耐久50/同時3マス)…<strong style="color:#ffd700;">Lv.3 から</strong>（最強の社員昇格ルート）<br><br>💎 <strong style="color:#26a17b;">高級モデル（USDT直販・縛りなし）</strong>：<br>・<strong style="color:#1a6a8a;">💎 ダイヤつるはし</strong>（耐久60/同時3マス/速度1.3秒）<br>　$3,000 USDT or 50万DJM／オフィスLv.2以上<br>・<strong style="color:#ff00aa;">👑 神話のつるはし</strong>（耐久100/同時4マス/速度1.0秒）<br>　$30,000 USDT／オフィスLv.4以上／<strong>1日1本まで</strong><br><br>💵 <strong>USDT直販</strong>＝アービで稼いだ資金で「時間を買う」ルート！<br>複数本まとめ買いもOK！',
+    title: 'STEP 5：つるはし購入（全6種・性格と縛りあり）',
+    text: '鉱山を選んだらショップ画面へ。<br><strong>ROND・DJM・USDT でつるはしを購入</strong><br><br>🎯 <strong style="color:#ffd700;">つるはしには性格がある！</strong><br>・<strong style="color:#7ae890;">🚀 安い＝早い・薄利・低耐久（速攻型）</strong><br>・<strong style="color:#ff8a8a;">🐢 高い＝遅い・厚利・高耐久（大物狙い型）</strong><br><br>📦 <strong>通常モデル（ランクで解放）</strong>：<br>・<strong style="color:#7ae890;">🪨 激安</strong>(耐久5/<b>1.0秒</b>/bonus×0.6)…🚀速攻型・サクサク広く掘る<br>・<strong>⛏ ベーシック</strong>(耐久15/1.8秒/×1.2)…⚖バランス型<br>・<strong style="color:#b8860b;">💪 プレミアム</strong>(耐久30/2.5秒/同時2マス/×2.4)…💼厚利型・<strong>Lv.2から</strong><br>・<strong style="color:#ffd700;">🟡 黄金</strong>(耐久60/3.5秒/同時3マス/×4.5)…🐢重厚型・<strong>Lv.3から</strong><br><br>💎 <strong style="color:#26a17b;">高級モデル（USDT直販・縛りなし）</strong>：<br>・<strong style="color:#1a6a8a;">💎 ダイヤつるはし</strong>(耐久80/3.0秒/同時3マス/×5.5)<br>　$3,000 USDT or 50万DJM／オフィスLv.2以上<br>・<strong style="color:#ff00aa;">👑 神話のつるはし</strong>(耐久120/4.0秒/同時4マス/×8.0)<br>　$30,000 USDT／オフィスLv.4以上／<strong>1日1本まで</strong><br><br>💡 <strong>戦略のヒント</strong>：序盤は激安たくさんで「広く浅く」、中盤以降は黄金で「狭く深く」が王道や！<br>💵 USDT直販＝アービで稼いだ資金で「時間を買う」ルート。複数本まとめ買いもOK！',
   },
   {
     icon: '⛏',
     title: 'STEP 6：採掘開始',
-    text: 'マス（岩）を<strong>タップ</strong>するとつるはしが配置されて掘削スタート！<br>・掘削には<strong>時間がかかる</strong>（激安で4秒）<br>・完了すると<strong>耐久-1</strong>、DJM or 宝石GET<br>・黄色い「YOUR」枠があんたのマス',
+    text: 'マス（岩）を<strong>タップ</strong>するとつるはしが配置されて掘削スタート！<br>・掘削には<strong>時間がかかる</strong>（激安で<strong style="color:#7ae890;">1秒</strong>、黄金で<strong style="color:#ff8a8a;">3.5秒</strong>）<br>・完了すると<strong>耐久-1</strong>、DJM or 宝石GET<br>・黄色い「YOUR」枠があんたのマス<br><br>💡 <strong>耐久度がゼロ</strong>になるとつるはしが壊れて、自動で次のつるはしに切り替わるで！',
   },
   {
     icon: '🎲',
@@ -14647,8 +14672,8 @@ const TUTORIAL_STEPS_RANKING = [
   },
   {
     icon: '⛏',
-    title: 'STEP 7：{{name}}、つるはしの選択肢（全6種）',
-    text: '採掘装備＝つるはしは<strong style="color:#ffd700;">全6種類</strong>！状況で使い分けや：<br><br>📦 <strong>通常モデル（縛りあり）</strong>：<br>・激安(耐久8)…誰でも<br>・ベーシック(耐久18)…誰でも<br>・プレミアム(耐久30/同時2マス)…<strong>C級社員 or オフィスLv.2</strong><br>・黄金(耐久50/同時3マス)…<strong>S級社員 or オフィスLv.4</strong>（社員ガチャの動機！）<br><br>💎 <strong style="color:#26a17b;">高級モデル（USDT直販・縛りなし）</strong>：<br>・<strong style="color:#1a6a8a;">💎 ダイヤつるはし</strong>（耐久60/同時3マス/速度1.3秒）<br>　$3,000 USDT or 50万DJM／オフィスLv.2以上<br>・<strong style="color:#ff00aa;">👑 神話のつるはし</strong>（耐久100/同時4マス/速度1.0秒）<br>　$30,000 USDT／オフィスLv.4以上／<strong>1日1本まで</strong><br><br>💵 <strong>USDT直販</strong>＝アービで稼いだ会社資金で「時間を買う」。社員育成と並行で経営の幅が広がる！<br><br>岩をタップして掘削 → DJM/宝石ゲット。<br>ライバル（マキシー、他プレイヤー）より先にお宝マスを掘るのが勝負や！',
+    title: 'STEP 7：{{name}}、つるはしの選択肢（全6種・性格と縛りあり）',
+    text: '採掘装備＝つるはしは<strong style="color:#ffd700;">全6種類</strong>！状況で使い分けや：<br><br>🎯 <strong style="color:#ffd700;">つるはしには性格がある！</strong><br>・<strong style="color:#7ae890;">🚀 安い＝早い・薄利・低耐久（速攻型）</strong><br>・<strong style="color:#ff8a8a;">🐢 高い＝遅い・厚利・高耐久（大物狙い型）</strong><br><br>📦 <strong>通常モデル（縛りあり）</strong>：<br>・<strong style="color:#7ae890;">🪨 激安</strong>(耐久5/<b>1.0秒</b>/×0.6)…🚀速攻・誰でも<br>・<strong>⛏ ベーシック</strong>(耐久15/1.8秒/×1.2)…⚖誰でも<br>・<strong style="color:#b8860b;">💪 プレミアム</strong>(耐久30/2.5秒/同時2マス/×2.4)…💼<strong>C級社員 or オフィスLv.2</strong><br>・<strong style="color:#ffd700;">🟡 黄金</strong>(耐久60/3.5秒/同時3マス/×4.5)…🐢<strong>S級社員 or オフィスLv.4</strong>（社員ガチャの動機！）<br><br>💎 <strong style="color:#26a17b;">高級モデル（USDT直販・縛りなし）</strong>：<br>・<strong style="color:#1a6a8a;">💎 ダイヤつるはし</strong>(耐久80/3.0秒/同時3マス/×5.5)<br>　$3,000 USDT or 50万DJM／オフィスLv.2以上<br>・<strong style="color:#ff00aa;">👑 神話のつるはし</strong>(耐久120/4.0秒/同時4マス/×8.0)<br>　$30,000 USDT／オフィスLv.4以上／<strong>1日1本まで</strong><br><br>💡 <strong>戦略のヒント</strong>：序盤は激安たくさんで「広く浅く」マス開拓、中盤以降は黄金/ダイヤで「狭く深く」厚利を狙う！<br>💵 USDT直販＝アービで稼いだ会社資金で「時間を買う」。社員育成と並行で経営の幅が広がる！<br><br>ライバル（マキシー、他プレイヤー）より先にお宝マスを掘るのが勝負や！',
   },
   {
     icon: '💎',
