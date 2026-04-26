@@ -1917,7 +1917,13 @@
     inset: 0;
     pointer-events: none;
     overflow: visible;
-    z-index: 800; /* 岩・宝石ポップアップ(999)よりは下、マス(1-4)よりは上 */
+    z-index: 800; /* 岩・宝石ポップアップ(999)よりは下、マス(1-4)よりは上、modal-overlay(1500)より下 */
+  }
+  /* 🛡 モーダル表示中は吹き出しを非表示（ボタン被り防止の保険／:has対応ブラウザのみ） */
+  body:has(.modal-overlay.show) .staff-bubble-container,
+  body:has(#custom-modal[style*="display:flex"]) .staff-bubble-container,
+  body:has(.modal-overlay.show) .chat-bubble-overlay {
+    display: none !important;
   }
   .staff-bubble {
     position: absolute;
@@ -3712,7 +3718,7 @@
     position: absolute; inset: 0;
     background: rgba(0,0,0,0.7);
     display: none; align-items: center; justify-content: center;
-    z-index: 500;
+    z-index: 1500; /* staff-bubble(800)・各種bubble(1000以下)よりも常に上 */
   }
   .modal-overlay.show { display: flex; }
   .modal-box {
